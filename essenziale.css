@@ -538,6 +538,7 @@
 :root #dex-view .dex-stage > img.dex-static, :root #dex-view .dex-stage img.dex-anim { z-index: 2; }
 :root #dex-view .dex-marks { top: 8px !important; right: 8px !important; z-index: 3; }
 /* Pillola crema/vetro in basso nella Scheda G */
+:root #dex-browse .dex-filters > .dex-foot { position: static !important; padding: 0 !important; }
 :root #dex-view .dex-card .dex-foot {
   position: absolute !important; left: 8px !important; right: 8px !important; bottom: 8px !important; z-index: 3;
   display: flex; align-items: center !important; justify-content: space-between; gap: 6px;
