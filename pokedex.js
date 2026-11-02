@@ -138,7 +138,7 @@ async function renderPokedex() {
     const foot = Object.assign(document.createElement('span'), { className: 'dex-foot' });
     const label = Object.assign(document.createElement('span'), { className: 'dex-label' });
     label.append(
-      Object.assign(document.createElement('span'), { className: 'dex-num', textContent: String(mon.id) }),
+      Object.assign(document.createElement('span'), { className: 'dex-num', textContent: `#${String(mon.id).padStart(3, '0')}` }),
       Object.assign(document.createElement('span'), { className: 'dex-name', textContent: it }));
     const ty = document.createElement('span');
     ty.className = 'dex-types';
