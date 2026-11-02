@@ -1,0 +1,862 @@
+/* Pokéncarta, versione "essenziale": meno riquadri e meno pillole in tutto il sito.
+   Caricato per ultimo, dopo styles.css e theme-70s.css: si toglie questo file e torna tutto com'era.
+   Regola usata: un riquadro resta solo se è un oggetto da toccare con un'immagine (schede del Pokédex,
+   regioni, carte) o se separa qualcosa che altrimenti si confonde (la scheda grande, la tabella).
+   I gruppi di testo si separano con lo spazio e i titoli; i filtri diventano parole, la scelta attiva è
+   sottolineata con un tratto spesso. */
+
+/* ---------- Contenitori: niente fondo, bordo, ombra ---------- */
+:root .calc, :root .matrix-card, :root .home-hero, :root .home-quick, :root .mon, :root .brushes,
+:root .settings fieldset, :root .result, :root .calc-block, :root .reg-place, :root .reg-gym {
+  background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0; padding-left: 0; padding-right: 0;
+}
+:root .calc, :root .matrix-card, :root .home-hero, :root .home-quick { padding-top: 0; padding-bottom: 0; }
+:root #chart-view, :root #coverage-view, :root #quiz-view, :root #home-view { gap: 56px; }
+:root .matrix-card, :root #coverage-view > * + * { margin-top: 56px; }
+:root #chart-view h2, :root #coverage-view h2, :root .home-quick h3 { font-size: 26px; margin-bottom: 20px; }
+:root .calc-block { padding-top: 0; }
+:root .calc-out { gap: 40px; }
+:root .mon { padding-top: 0; }
+:root .reg-gym { padding: 0; }
+:root .reg-place { padding: 0; }
+
+/* ---------- Filtri e selettori: parole al posto delle pillole ---------- */
+:root .dex-gen, :root .hist-btn, :root .quiz-switch .dex-gen, :root .dex-switch .dex-gen {
+  border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 0 !important;
+  padding: 4px 2px !important; min-width: 0 !important; height: auto !important;
+  color: var(--muted) !important; font-weight: 800; position: relative;
+}
+:root .dex-gen::after, :root .hist-btn::after {
+  content: ''; position: absolute; left: 2px; right: 2px; bottom: -2px; height: 3px; border-radius: 2px;
+  background: var(--text); transform: scaleX(0); transform-origin: left; transition: transform .25s cubic-bezier(.2, .9, .3, 1);
+}
+:root .dex-gen[aria-pressed="true"], :root .hist-btn[aria-pressed="true"] { color: var(--text) !important; }
+:root .dex-gen[aria-pressed="true"]::after, :root .hist-btn[aria-pressed="true"]::after { transform: scaleX(1); }
+@media (hover: hover) and (pointer: fine) { :root .dex-gen:hover, :root .hist-btn:hover { color: var(--text) !important; } }
+:root .dex-gens, :root .quiz-switch, :root .dex-switch, :root .dex-methods { gap: 6px 22px !important; }
+:root .quiz-switch .dex-gen, :root .dex-switch .dex-gen { font-size: 19px; }
+
+/* Schede della testata: icona colorata + parola, la scheda attiva sottolineata (niente pillola) */
+:root .tabs { gap: 10px 26px; padding-left: 0; }
+:root .tabs button { border: 0 !important; background: none !important; padding: 0 2px 6px 0 !important; height: auto; position: relative; color: var(--text) !important; }
+:root .tabs button + button { border-left: 0 !important; }
+:root .tabs .tab-md { margin: 0 4px 0 0; width: 34px; height: 34px; box-shadow: none; }
+:root .tabs button::after { content: ''; position: absolute; left: 40px; right: 2px; bottom: 0; height: 3px; border-radius: 2px; background: var(--text);
+  transform: scaleX(0); transform-origin: left; transition: transform .25s cubic-bezier(.2, .9, .3, 1); }
+:root .tabs button[aria-current="page"]::after { transform: scaleX(1); }
+
+/* Campi di ricerca: una linea sotto al posto della pillola */
+:root .dex-search, :root .home-search input {
+  border: 0 !important; border-bottom: 2px solid color-mix(in srgb, var(--text) 35%, transparent) !important; border-radius: 0 !important;
+  background: none !important; padding-left: 36px !important; font-size: 19px !important;
+}
+:root .dex-search { background: no-repeat 4px 50% / 20px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23887d72' stroke-width='2.6' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6'/%3E%3Cpath d='M15 15l5 5'/%3E%3C/svg%3E") !important; }
+:root .dex-search:focus, :root .home-search input:focus { outline: none; border-bottom-color: var(--text) !important; }
+:root .home-lens { left: 4px; }
+
+/* Pulsanti secondari ("Salta", "Mostra altri", "← Elenco"): testo sottolineato */
+:root .btn.ghost { border: 0 !important; background: none !important; box-shadow: none !important; padding: 0 4px !important; height: auto !important;
+  text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 2px; }
+
+/* ---------- Elenchi di riquadri cliccabili senza immagine: diventano righe ---------- */
+/* Riquadri della Home: colore della sezione come tratto a sinistra, niente cornice */
+:root .home-tile { border: 0 !important; box-shadow: inset 4px 0 0 var(--c) !important; border-radius: 0 !important; background: none !important; padding: 4px 0 4px 20px !important; min-height: 0 !important; }
+@media (hover: hover) and (pointer: fine) { :root .home-tile:hover { transform: translateX(4px) !important; box-shadow: inset 6px 0 0 var(--c) !important; } }
+:root .home-answer { border: 0 !important; background: none !important; box-shadow: none !important; border-radius: 0 !important; }
+:root .home-answer b { font-size: 28px; }
+:root .home-answer.ok b { color: #3f9d5a; }
+:root .home-answer.wrong b { color: #d0533c; }
+/* Abilità e oggetti: righe separate da un filetto */
+:root .cmp-card:not(.zoom-card) { border: 0 !important; border-bottom: 1.5px solid var(--border) !important; border-radius: 0 !important; box-shadow: none !important; background: none !important; }
+@media (hover: hover) and (pointer: fine) { :root .cmp-card:not(.zoom-card):hover { transform: none !important; box-shadow: none !important; } :root .cmp-card:not(.zoom-card):hover strong { text-decoration: underline; text-underline-offset: 4px; } }
+:root .cmp-sum { padding-left: 0 !important; padding-right: 0 !important; }
+:root .cmp-ico { background: none; }
+
+/* Riquadri con immagine (Pokédex, evoluzioni, regioni, Pokémon nelle liste): niente cornice, resta l'immagine */
+:root .dex-card { border: 0 !important; box-shadow: none !important; }
+:root .evo-mon, :root .evo-mon.current { border: 0 !important; box-shadow: none !important; background: none !important; }
+:root .evo-mon.current span { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+:root .reg-card { border: 0 !important; box-shadow: none !important; background: none !important; }
+:root .reg-img { border-radius: 16px; margin-top: 0; }
+:root .cov-mon, :root .reg-mon, :root .reg-starter, :root .reg-gym-sprite { background: none !important; }
+
+/* Etichette ×2, ×4…: solo il numero colorato, senza pillola */
+:root .calc-row .lbl, :root .answer-row .lbl { background: none !important; box-shadow: none !important; padding: 0 !important; font-size: 20px; min-width: 40px; text-align: left; }
+
+/* Tipo nei capipalestra e nelle città: resta l'etichetta del tipo (è un'informazione, non un pulsante) */
+
+/* Stile base: anche il binario grigio delle schede sparisce */
+:root .tabs { background: none !important; padding: 0 !important; border: 0 !important; }
+:root .tabs button[aria-current="page"] { box-shadow: none !important; }
+:root[data-style="base"] .tabs button::after { left: 2px; }
+
+/* =====================================================================================
+   Revisione 2: un solo foglio per pagina, spazio usato meglio, niente scritte ridondanti
+   ===================================================================================== */
+
+/* Criterio: lo stacco tra fondo e scritte lo dà UN foglio chiaro per pagina (la colonna dei contenuti),
+   non tanti riquadri; dentro il foglio le parti si separano con spazio e filetti. */
+.stripes, .stickers { display: none !important; }
+:root main:not([hidden]) {
+  background: var(--surface); border-radius: 28px; padding: 40px 44px 56px !important; margin-top: 8px; margin-bottom: 48px;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .05), 0 12px 40px rgba(20, 16, 12, .07);
+}
+:root[data-style="retro"] main:not([hidden]) { box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 12%, transparent), 0 12px 40px rgba(20, 16, 12, .06); }
+@media (max-width: 620px) { :root main:not([hidden]) { padding: 24px 18px 40px !important; border-radius: 20px; margin-left: 8px; margin-right: 8px; } }
+/* Riquadri interni che restano (schede del Pokédex, carte, regioni) poggiano su un fondo leggermente diverso */
+:root .dex-search, :root .home-search input { background: none !important; }
+
+/* Abilità e oggetti: il titolo nella scheda grande ha di nuovo il suo margine */
+:root .zoom-card .cmp-sum { padding: 20px 22px 6px !important; }
+:root .zoom-card .zoom-scroll { padding-left: 22px; padding-right: 22px; }
+
+/* ---------- Scheda del Pokémon ---------- */
+/* Titoli di sezione che ripetono ciò che si vede: tolti alla vista, restano per i lettori di schermo */
+.dex-detail > .dex-about > h3, .dex-detail > .dex-def > h3, .dex-detail > .dex-evo > h3,
+.dex-detail > .dex-cards > h3, .dex-detail > .dex-moves > h3 {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+/* Spazio gestito con distanze e allineamenti, non ingrandendo: una sezione sotto l'altra, ben distanziate,
+   scritte alle misure normali del sito. */
+:root .dex-detail { row-gap: 72px; }
+/* Informazioni: una griglia a quattro colonne su tutta la larghezza, con aria tra le righe */
+:root .dex-info { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px 32px; }
+@media (max-width: 760px) { :root .dex-info { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Statistiche: misure normali, righe un po' più distanziate, colonna più stretta e centrata */
+:root .dex-stats { max-width: 680px; margin: 0 auto; gap: 12px; }
+/* Danno subito: i gruppi affiancati in colonne (non tutti a sinistra), misure normali */
+:root .dex-def .calc-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px 40px; }
+:root .dex-def .calc-row { display: grid; grid-template-columns: auto 1fr; align-content: start; gap: 8px 10px; padding: 0 !important; border: 0 !important; }
+:root .dex-def .calc-row .lbl { min-width: 0; }
+:root .dex-def .calc-row .word { align-self: center; }
+:root .dex-def .calc-row .list { grid-column: 1 / -1; }
+/* Evoluzioni: al centro della pagina, con spazio tra un Pokémon e l'altro */
+:root .dex-evo .evo { display: flex; justify-content: center; overflow-x: auto; }
+:root .dex-evo .evo-branch, :root .dex-evo .evo-step { gap: 28px; }
+
+/* ---------- Scritte ridondanti tolte nel resto del sito ---------- */
+/* Home: tutto il Pokémon del giorno porta già alla scheda */
+.home-more { display: none !important; }
+/* Quiz: l'istruzione sotto il selettore (i pulsanti ×2… e le caselle si spiegano da soli) */
+.quiz-hint { display: none !important; }
+/* Tabella: titolo sopra i tipi, sottotitoli delle colonne, frase che spiega righe e colonne (c'è ATT↓ DIF→) */
+#chart-view .calc > h2, .calc-col > .sub, .matrix-card > .hint, #chart-view .matrix-card .hint { display: none !important; }
+/* Copertura: titolo sopra i tipi, nota sotto "Solo completamente evoluti", riga "1025 Pokémon · danno migliore…" */
+#coverage-view .calc > h2, #coverage-view .cov-note, #coverage-view .cov-total { display: none !important; }
+/* Righe di abilità e oggetti alte quanto il contenuto (senza riquadro l'altezza fissa lasciava buchi) */
+:root .cmp-list:not(.cmp-items) > .cmp-card:not(.zoom-card), :root .cmp-items > .cmp-card:not(.zoom-card) { height: auto; }
+:root .cmp-list > .cmp-card:not(.zoom-card) .cmp-sum { padding-top: 14px !important; padding-bottom: 16px !important; }
+/* Righe "nessuno" nascoste ovunque (Tabella, Home), non solo nella scheda del Pokémon */
+:root .calc-row.none { display: none !important; }
+
+/* Home: niente disco attorno all'artwork del Pokémon del giorno */
+:root .home-art { background: none !important; box-shadow: none !important; border: 0 !important; }
+:root .home-art img { filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .12)); }
+/* Home: le cinque sezioni sempre su una riga (o tutte su due righe pari su schermi stretti) */
+:root .home-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 20px !important; }
+@media (max-width: 760px) { :root .home-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+/* Home: artwork del Pokémon del giorno più grande */
+:root .home-art { width: 300px !important; height: 300px !important; }
+:root .home-art img { width: 300px !important; height: 300px !important; }
+@media (max-width: 620px) { :root .home-art, :root .home-art img { width: 220px !important; height: 220px !important; } }
+/* Titolo del sito più grande (stile '70: larghezza del logo da corsa; stile base: la scritta) */
+@media (min-width: 621px) { :root .logo { --lw: 480px; } }
+:root[data-style="base"] .top h1.logo { font-size: 34px; }
+
+/* ---------- Home senza foglio: ricerca e Pokémon del giorno sullo sfondo,
+   le sezioni (e le risposte della domanda lampo) staccate come tessere chiare ---------- */
+:root #home-view:not([hidden]) { background: none !important; box-shadow: none !important; padding: 0 16px 56px !important; }
+:root .home-tile {
+  background: var(--surface) !important; border-radius: 18px !important; padding: 20px 20px 22px !important;
+  box-shadow: inset 0 5px 0 var(--c), 0 1px 2px rgba(20, 16, 12, .06), 0 8px 24px rgba(20, 16, 12, .07) !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root .home-tile:hover { transform: translateY(-3px) !important; box-shadow: inset 0 5px 0 var(--c), 0 2px 4px rgba(20, 16, 12, .08), 0 14px 32px rgba(20, 16, 12, .11) !important; }
+}
+:root .home-answer { background: var(--surface) !important; border-radius: 16px !important; padding: 14px 6px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 6px 18px rgba(20, 16, 12, .06) !important; }
+:root .home-answer.ok { box-shadow: inset 0 0 0 2px #3f9d5a !important; }
+:root .home-answer.wrong { box-shadow: inset 0 0 0 2px #d0533c !important; }
+/* Home: domanda lampo centrata */
+:root .home-quick h3 { text-align: center; }
+:root .home-prompt { justify-content: center; text-align: center; }
+:root .home-fb { justify-content: center; }
+
+/* Schede della testata: al passaggio il medaglione si solleva con un'ombra del suo colore,
+   la parola prende il colore della scheda e il tratto sotto si allunga a metà */
+:root .tabs [data-mode="quiz"] { --tc: #c8553d; }
+:root .tabs [data-mode="chart"] { --tc: #1f6f78; }
+:root .tabs [data-mode="coverage"] { --tc: #c98a1b; }
+:root .tabs [data-mode="dex"] { --tc: #8a4f7d; }
+:root .tabs [data-mode="regions"] { --tc: #2f5f9a; }
+:root .tabs button { transition: color .2s ease; }
+:root .tabs .tab-md { transition: transform .25s cubic-bezier(.2, .9, .3, 1.3), box-shadow .25s ease; }
+:root .tabs button::after { background: var(--tc, var(--text)); }
+@media (hover: hover) and (pointer: fine) {
+  :root .tabs button:hover { color: var(--tc) !important; }
+  :root .tabs button:hover .tab-md { transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 14px color-mix(in srgb, var(--tc) 45%, transparent); }
+  :root .tabs button:not([aria-current="page"]):hover::after { transform: scaleX(1); opacity: .45; }
+}
+:root .tabs button:active .tab-md { transform: scale(.94); box-shadow: none; }
+:root .tabs button:focus-visible { outline: none; }
+:root .tabs button:focus-visible .tab-md { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--tc); }
+/* Schede cliccabili anche a riposo: medaglione in rilievo (ombra piena sotto, come un tasto)
+   e un tratto leggero del colore della scheda sempre visibile sotto la parola */
+:root .tabs .tab-md { box-shadow: 0 3px 0 color-mix(in srgb, var(--tc) 55%, #221d19), 0 5px 10px color-mix(in srgb, var(--tc) 25%, transparent) !important; }
+:root .tabs button::after { transform: scaleX(1) !important; opacity: .22; transition: opacity .2s ease; }
+:root .tabs button[aria-current="page"]::after { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  :root .tabs button:hover .tab-md { box-shadow: 0 6px 0 color-mix(in srgb, var(--tc) 55%, #221d19), 0 10px 18px color-mix(in srgb, var(--tc) 35%, transparent) !important; }
+  :root .tabs button:not([aria-current="page"]):hover::after { opacity: .6; }
+}
+:root .tabs button:active .tab-md { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--tc) 55%, #221d19) !important; }
+/* Tratto sotto le schede: una traccia leggera sempre visibile (::before) e sopra il tratto pieno che si
+   riempie da sinistra a destra al passaggio del mouse e resta pieno sulla scheda attiva (::after) */
+:root .tabs button::before { content: ''; position: absolute; left: 40px; right: 2px; bottom: 0; height: 3px; border-radius: 2px; background: var(--tc, var(--text)); opacity: .22; }
+:root[data-style="base"] .tabs button::before { left: 2px; }
+:root .tabs button::after { opacity: 1 !important; transform: scaleX(0) !important; transform-origin: left; transition: transform .35s cubic-bezier(.2, .9, .3, 1) !important; }
+:root .tabs button[aria-current="page"]::after { transform: scaleX(1) !important; }
+@media (hover: hover) and (pointer: fine) { :root .tabs button:hover::after { transform: scaleX(1) !important; } }
+
+/* Ricerca della Home: campo chiaro in rilievo come le tessere, lente in un cerchio rosso;
+   cliccandoci il campo si accende con un anello del colore del sito e la lente ruota appena verso il testo */
+:root .home-search { max-width: 720px; margin: 0 auto 30px !important; }
+:root .home-search input {
+  height: 64px !important; padding: 0 22px 0 72px !important; font-size: 19px !important;
+  background: var(--surface) !important; border: 0 !important; border-radius: 20px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 10px 28px rgba(20, 16, 12, .08) !important;
+  transition: box-shadow .25s ease, transform .25s cubic-bezier(.2, .9, .3, 1.2);
+}
+:root .home-search input::placeholder { color: color-mix(in srgb, var(--text) 45%, transparent); }
+:root .home-search input:focus {
+  outline: none; transform: translateY(-1px);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #c8553d, 0 14px 34px rgba(20, 16, 12, .12) !important;
+}
+:root .home-lens { left: 14px !important; width: 42px !important; height: 42px !important; margin-top: -21px !important; padding: 10px; border-radius: 50%;
+  background: #c8553d; stroke: #fbf8f2 !important; stroke-width: 3 !important; box-shadow: 0 2px 0 #9e3a26;
+  transition: transform .3s cubic-bezier(.2, .9, .3, 1.4); }
+:root .home-search:focus-within .home-lens { transform: rotate(-12deg) scale(1.06); }
+@media (hover: hover) and (pointer: fine) { :root .home-search input:hover:not(:focus) { box-shadow: 0 2px 4px rgba(20, 16, 12, .08), 0 14px 32px rgba(20, 16, 12, .11) !important; } }
+
+/* ---------- Quiz come la Home: niente foglio, la domanda e i moltiplicatori come tessere chiare in rilievo ---------- */
+:root #quiz-view:not([hidden]) { background: none !important; box-shadow: none !important; padding: 0 16px 56px !important; }
+/* Il Pokémon (o il tipo) della domanda: una tessera chiara */
+:root #quiz-view .mon {
+  background: var(--surface) !important; border-radius: 22px !important; padding: 22px 26px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 10px 28px rgba(20, 16, 12, .08) !important;
+}
+:root #quiz-view .sprite-wrap { background: color-mix(in srgb, var(--text) 5%, var(--surface)) !important; border-radius: 16px; }
+/* Moltiplicatori: tasti chiari in rilievo, quello scelto pieno del suo colore */
+:root #quiz-view .brushes { background: none !important; box-shadow: none !important; padding: 0 !important; margin-top: 28px !important; }
+:root #quiz-view .brush {
+  height: 52px; border: 0 !important; border-radius: 16px !important; background: var(--surface) !important; color: var(--m) !important;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--m) 35%, transparent), 0 8px 20px rgba(20, 16, 12, .07) !important;
+  transition: transform .2s cubic-bezier(.2, .9, .3, 1.3), box-shadow .2s ease, background-color .2s ease, color .2s ease;
+}
+:root #quiz-view .brush.on { background: var(--m) !important; color: #fbf8f2 !important; transform: translateY(-2px);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--m) 60%, #221d19), 0 12px 24px color-mix(in srgb, var(--m) 30%, transparent) !important; }
+@media (hover: hover) and (pointer: fine) { :root #quiz-view .brush:not(.on):hover { transform: translateY(-2px); } }
+:root #quiz-view .brush:active { transform: translateY(1px) !important; box-shadow: 0 1px 0 color-mix(in srgb, var(--m) 40%, transparent) !important; }
+/* Caselle dei tipi: un po' di rilievo per staccarle dallo sfondo */
+:root #quiz-view .tile { box-shadow: 0 2px 6px rgba(20, 16, 12, .06); }
+/* Esito: tessera chiara come la domanda */
+:root #quiz-view .result { background: var(--surface) !important; border-radius: 22px !important; padding: 22px 26px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 10px 28px rgba(20, 16, 12, .08) !important; }
+/* Impostazioni in fondo, centrate */
+:root #quiz-view .settings { text-align: center; }
+:root #quiz-view .settings fieldset { text-align: left; }
+
+/* Quiz: impostazioni nascoste (generazioni e direzione restano quelle salvate) */
+:root #quiz-view .settings { display: none !important; }
+/* Salta e Verifica: due tasti in rilievo, Salta chiaro e stretto, Verifica pieno e largo */
+:root #quiz-view .actions { display: grid; grid-template-columns: 1fr 3fr; gap: 16px; margin-top: 32px; }
+:root #quiz-view .actions .btn {
+  height: 58px !important; border: 0 !important; border-radius: 18px !important; font-size: 17px; letter-spacing: .04em;
+  text-decoration: none !important; padding: 0 20px !important;
+  transition: transform .2s cubic-bezier(.2, .9, .3, 1.3), box-shadow .2s ease, filter .2s ease;
+}
+:root #quiz-view .actions .btn.ghost { background: var(--surface) !important; color: var(--text) !important;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--text) 18%, transparent), 0 8px 20px rgba(20, 16, 12, .07) !important; }
+:root #quiz-view .actions .btn.primary { background: #c8553d !important; color: #fbf8f2 !important;
+  box-shadow: 0 4px 0 #9e3a26, 0 12px 26px rgba(200, 85, 61, .3) !important; }
+:root #quiz-view .actions .btn.primary::before { display: none; }
+@media (hover: hover) and (pointer: fine) { :root #quiz-view .actions .btn:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.04); } }
+:root #quiz-view .actions .btn:not(:disabled):active { transform: translateY(2px) !important; }
+:root #quiz-view .actions .btn.primary:not(:disabled):active { box-shadow: 0 1px 0 #9e3a26 !important; }
+:root #quiz-view .actions .btn.ghost:not(:disabled):active { box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 18%, transparent) !important; }
+:root #quiz-view .actions .btn:disabled { opacity: .45; }
+
+/* Quiz: Pokémon della domanda più grande */
+:root #quiz-view .sprite-wrap { width: 200px !important; height: 200px !important; }
+:root #quiz-view #sprite { max-width: 184px !important; max-height: 184px !important; width: 184px; height: 184px; object-fit: contain; }
+@media (max-width: 560px) { :root #quiz-view .sprite-wrap { width: 150px !important; height: 150px !important; } :root #quiz-view #sprite { max-width: 138px !important; max-height: 138px !important; width: 138px; height: 138px; } }
+
+/* Quiz: niente riquadri attorno al Pokémon della domanda (né la tessera né la cornice dello sprite) */
+:root #quiz-view .mon { background: none !important; box-shadow: none !important; padding: 0 !important; }
+:root #quiz-view .sprite-wrap { background: none !important; box-shadow: none !important; }
+:root #quiz-view .sprite-wrap::before, :root #quiz-view .sprite-wrap::after { display: none !important; }
+:root #quiz-view #sprite { filter: drop-shadow(0 8px 8px rgba(20, 16, 12, .15)); }
+
+/* Quiz: Salta e Verifica più piccoli, centrati sotto le caselle.
+   Verifica è un tasto compatto in rilievo; Salta una parola accanto, perché è l'azione secondaria */
+:root #quiz-view .actions { display: flex !important; justify-content: center; align-items: center; gap: 28px !important; margin-top: 36px !important; }
+:root #quiz-view .actions .btn.primary { order: 2; flex: none; width: auto !important; min-width: 220px; height: 50px !important; font-size: 16px !important; border-radius: 999px !important; padding: 0 36px !important; }
+:root #quiz-view .actions .btn.ghost { order: 1; flex: none; width: auto !important; height: auto !important; padding: 6px 4px !important;
+  background: none !important; box-shadow: none !important; font-size: 16px !important; color: var(--muted) !important; }
+@media (hover: hover) and (pointer: fine) { :root #quiz-view .actions .btn.ghost:not(:disabled):hover { color: var(--text) !important; transform: none; } }
+:root #quiz-view .actions .btn.ghost:not(:disabled):active { transform: none !important; box-shadow: none !important; }
+
+/* Quiz sui tipi: simbolo e nome del tipo vicini al centro; sotto, staccata, la domanda con sopra
+   "Attacco · danno inflitto" (o "Difesa · danno subito") */
+:root #quiz-view .mon:has(#sprite[hidden]) {
+  display: grid !important; grid-template-columns: auto auto; justify-content: center; align-items: center; column-gap: 18px; row-gap: 0;
+}
+:root #quiz-view .mon:has(#sprite[hidden]) .sprite-wrap { width: 96px !important; height: 96px !important; grid-column: 1; grid-row: 1; }
+:root #quiz-view .mon:has(#sprite[hidden]) .mon-info { display: contents; }
+:root #quiz-view .mon:has(#sprite[hidden]) #mon-name { grid-column: 2; grid-row: 1; margin: 0; font-size: 44px; }
+:root #quiz-view .mon:has(#sprite[hidden]) #dex {
+  grid-column: 1 / -1; grid-row: 2; text-align: center; margin: 36px 0 6px; padding-top: 24px;
+  border-top: 1.5px dashed var(--border); font-size: 14px; letter-spacing: .08em; text-transform: uppercase;
+}
+:root #quiz-view .mon:has(#sprite[hidden]) #prompt { grid-column: 1 / -1; grid-row: 3; text-align: center; margin: 0; font-size: 21px; font-weight: 700; color: var(--text); }
+:root #quiz-view .mon:has(#sprite[hidden]) #mon-en, :root #quiz-view .mon:has(#sprite[hidden]) .mon-side { display: none !important; }
+/* Le colonne si allargavano per la domanda sotto: icona e nome in due colonne strette al centro */
+:root #quiz-view .mon:has(#sprite[hidden]) { grid-template-columns: 1fr auto auto 1fr !important; }
+:root #quiz-view .mon:has(#sprite[hidden]) .sprite-wrap { grid-column: 2 !important; }
+:root #quiz-view .mon:has(#sprite[hidden]) #mon-name { grid-column: 3 !important; }
+
+/* ---------- Tabella come Home e Quiz: niente foglio; tipi da scegliere centrati;
+   Difesa e Attacco due tessere chiare affiancate; tabella completa nella sua tessera ---------- */
+:root #chart-view:not([hidden]) { background: none !important; box-shadow: none !important; padding: 0 16px 56px !important; }
+:root #chart-view .picker { justify-content: center; max-width: 820px; margin: 0 auto; gap: 10px 12px !important; }
+:root #chart-view .calc-out { margin-top: 36px !important; gap: 24px !important; }
+:root #chart-view .calc-col {
+  background: var(--surface) !important; border-radius: 22px !important; padding: 24px 26px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 10px 28px rgba(20, 16, 12, .08) !important;
+}
+:root #chart-view .calc-col > h3 { font-size: 22px !important; margin-bottom: 16px; text-align: center; }
+:root #chart-view .calc-col .calc-sub-head { justify-content: center; }
+/* "Pokémon di tipo …": riga su tutta la larghezza, come un pulsante che apre l'elenco */
+:root #chart-view .calc-mons { grid-column: 1 / -1; background: var(--surface) !important; border-radius: 18px !important; padding: 16px 22px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 6px 18px rgba(20, 16, 12, .06) !important; }
+:root #chart-view .calc-mons summary { cursor: pointer; }
+/* Tabella completa: tessera a sé, titolo e legenda centrati */
+:root #chart-view .matrix-card { background: var(--surface) !important; border-radius: 22px !important; padding: 28px 24px !important; margin-top: 40px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 10px 28px rgba(20, 16, 12, .08) !important; }
+:root #chart-view .matrix-head { flex-direction: column; align-items: center; gap: 10px; margin-bottom: 18px; }
+:root #chart-view .matrix-head h2 { font-size: 26px !important; }
+:root #chart-view .legend { justify-content: center; }
+/* Tabella: niente numero accanto a "Pokémon di tipo …" */
+:root #chart-view .calc-mons summary [data-count] { display: none !important; }
+
+/* Torna su: tondo chiaro in rilievo come le tessere (non più medaglione scuro con anelli),
+   freccia rossa; passando il mouse si alza e la freccia sale un poco */
+:root .to-top {
+  width: 52px !important; height: 52px !important; border: 0 !important; border-radius: 50% !important;
+  background: var(--surface) !important; color: #c8553d !important;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--text) 14%, transparent), 0 10px 24px rgba(20, 16, 12, .14) !important;
+}
+:root .to-top svg { width: 24px; height: 24px; stroke-width: 2.6; transition: transform .25s cubic-bezier(.2, .9, .3, 1.4); }
+@media (hover: hover) and (pointer: fine) {
+  :root .to-top.show:hover { transform: translateY(-3px) !important; box-shadow: 0 5px 0 color-mix(in srgb, var(--text) 14%, transparent), 0 14px 30px rgba(20, 16, 12, .18) !important; }
+  :root .to-top.show:hover svg { transform: translateY(-3px); }
+}
+:root .to-top:active { transform: translateY(1px) !important; box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 14%, transparent) !important; }
+
+/* ---------- Copertura come Tabella: niente foglio; tipi e opzioni centrati;
+   "Mosse dei tipi scelti" e "Risultato" due tessere chiare con titolo centrato ---------- */
+:root #coverage-view:not([hidden]) { background: none !important; box-shadow: none !important; padding: 0 16px 56px !important; }
+:root #coverage-view > .calc { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 28px; }
+:root #coverage-view .picker { justify-content: center; max-width: 820px; margin: 0 auto; gap: 10px 12px !important; }
+:root #coverage-view > .calc > .picker { flex-basis: 100%; margin-bottom: 8px; }
+/* Opzioni: testo con casella del colore del sito, niente riquadro */
+:root #coverage-view .cov-forms { margin: 0 !important; font-size: 15px; color: var(--text); }
+:root #coverage-view .cov-forms input { accent-color: #c8553d; width: 18px; height: 18px; margin: 0; cursor: pointer; }
+:root #coverage-view .matrix-card {
+  background: var(--surface) !important; border-radius: 22px !important; padding: 28px 24px !important; margin-top: 40px !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 10px 28px rgba(20, 16, 12, .08) !important;
+}
+:root #coverage-view .matrix-head { flex-direction: column; align-items: center; gap: 10px; margin-bottom: 18px; }
+:root #coverage-view .matrix-head h2 { font-size: 26px !important; margin: 0 !important; }
+:root #cov-moves #cov-move-types { margin: 0 auto 22px !important; }
+/* Elenco mosse: senza cornice, intestazione come semplice riga di testo */
+:root #coverage-view .moves-scroll { border: 0 !important; border-radius: 0 !important; max-height: 460px; }
+:root #coverage-view .moves th { background: var(--surface) !important; color: var(--muted); font-size: 12px; }
+:root #coverage-view .moves tr:first-child td { border-top: 0; }
+/* Risultato: la barra dice le proporzioni, i gruppi sotto dicono i numeri; via i sei riquadri ripetuti */
+:root #coverage-view .cov-counts { display: none !important; }
+:root #coverage-view .cov-bar { height: 18px; margin: 4px 0 18px; border-radius: 9px; }
+:root #coverage-view .cov-group { border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent); padding: 14px 4px; margin: 0; }
+:root #coverage-view .cov-group summary { font-size: 17px; gap: 14px; }
+:root #coverage-view .cov-group .lbl { background: none !important; width: auto; height: auto; min-width: 44px; justify-content: start; font-size: 20px; color: var(--m); }
+:root #coverage-view .cov-list { margin-top: 14px; gap: 8px 10px; }
+:root #coverage-view .moves-scroll { margin-inline: auto; }
+
+/* Barra del risultato: passando sopra un tratto compare il numero di Pokémon, gli altri tratti si attenuano */
+:root #coverage-view .cov-bar { overflow: visible; position: relative; }
+:root #coverage-view .cov-bar span { position: relative; transition: opacity .2s ease, transform .2s ease; }
+:root #coverage-view .cov-bar span:first-child { border-radius: 9px 0 0 9px; }
+:root #coverage-view .cov-bar span:last-child { border-radius: 0 9px 9px 0; }
+:root #coverage-view .cov-bar span:only-child { border-radius: 9px; }
+:root #coverage-view .cov-bar span::after {
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 10px); left: 50%; z-index: 2;
+  padding: 7px 12px; border-radius: 10px; white-space: nowrap; pointer-events: none;
+  background: var(--text); color: var(--bg); font-size: 14px; font-weight: 800;
+  opacity: 0; transform: translate(-50%, 4px); transition: opacity .18s ease, transform .18s ease;
+}
+:root #coverage-view .cov-bar span:first-child::after { left: 0; transform: translate(0, 4px); }
+:root #coverage-view .cov-bar span:last-child:not(:first-child)::after { left: auto; right: 0; transform: translate(0, 4px); }
+@media (hover: hover) and (pointer: fine) {
+  :root #coverage-view .cov-bar:hover span:not(:hover) { opacity: .35; }
+  :root #coverage-view .cov-bar span:hover { transform: scaleY(1.25); }
+  :root #coverage-view .cov-bar span:hover::after { opacity: 1; transform: translate(-50%, 0) scaleY(.8); }
+  :root #coverage-view .cov-bar span:first-child:hover::after,
+  :root #coverage-view .cov-bar span:last-child:not(:first-child):hover::after { transform: translate(0, 0) scaleY(.8); }
+}
+
+/* ---------- Pokédex (elenco): niente foglio come le altre pagine; ricerca come la Home;
+   titolo della regione centrato; ogni Pokémon una tessera chiara in rilievo ---------- */
+:root #dex-view:not([hidden]):has(> #dex-browse:not([hidden]), > .cmp-view:not([hidden])) { background: none !important; box-shadow: none !important; padding: 0 16px 56px !important; }
+/* Ricerca: campo chiaro in rilievo con la lente nel cerchio rosso (vale anche per Abilità e Oggetti) */
+:root .dex-search {
+  display: block; width: 100%; max-width: 720px; margin-inline: auto;
+  height: 60px !important; padding: 0 22px 0 70px !important; font-size: 18px !important;
+  border: 0 !important; border-radius: 20px !important;
+  background: var(--surface) no-repeat 14px 50% / 40px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23c8553d'/%3E%3Cg fill='none' stroke='%23fbf8f2' stroke-width='3' stroke-linecap='round'%3E%3Ccircle cx='18' cy='18' r='6.5'/%3E%3Cpath d='M23 23l5 5'/%3E%3C/g%3E%3C/svg%3E") !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 10px 28px rgba(20, 16, 12, .08) !important;
+  transition: box-shadow .25s ease, transform .25s cubic-bezier(.2, .9, .3, 1.2);
+}
+:root .dex-search::placeholder { color: color-mix(in srgb, var(--text) 45%, transparent); }
+:root .dex-search:focus { outline: none; transform: translateY(-1px); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #c8553d, 0 14px 34px rgba(20, 16, 12, .12) !important; }
+:root #dex-browse .dex-filters { gap: 22px !important; }
+/* Titolo della regione: centrato, senza bandierina né riga tratteggiata */
+:root .dex-region { justify-content: center; text-align: center; flex-direction: column; align-items: center; gap: 4px !important;
+  border: 0 !important; margin-top: 44px !important; padding: 0 !important; font-size: 28px !important; }
+:root .dex-region span { padding-left: 0 !important; }
+:root .dex-region span::before { display: none !important; }
+:root .dex-region small { font-size: 13px; color: var(--muted); }
+/* Schede: tessera chiara in rilievo; numero come testo; tipi come icona e nome, senza pillola */
+:root #dex-view .dex-list { gap: 22px !important; }
+:root #dex-view .dex-card {
+  background: var(--surface) !important; border-radius: 22px !important; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 8px 22px rgba(20, 16, 12, .08) !important;
+  transition: transform .25s cubic-bezier(.2, .9, .3, 1.2), box-shadow .25s ease !important;
+}
+:root #dex-view .dex-card .dex-stage { box-shadow: none !important; }
+:root #dex-view .dex-num { background: none !important; box-shadow: none !important; padding: 0 !important; font-size: 13px; }
+:root #dex-view .dex-card .badge.mini { background: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; height: auto; font-size: 14px; gap: 6px; color: var(--text); }
+:root #dex-view .dex-card .badge.mini .ico { margin: 0 !important; width: 22px; height: 22px; box-shadow: none !important; }
+@media (hover: hover) and (pointer: fine) {
+  :root #dex-view .dex-card:hover { transform: translateY(-4px) !important; box-shadow: 0 2px 4px rgba(20, 16, 12, .08), 0 16px 34px rgba(20, 16, 12, .14) !important; }
+}
+:root #dex-view .dex-card:active { transform: translateY(1px) !important; box-shadow: 0 1px 2px rgba(20, 16, 12, .1) !important; }
+:root #dex-view .dex-card .dex-num { top: 12px !important; left: 14px !important; }
+
+/* Pokédex: schede più grandi, tre per riga su schermo largo; Pokémon, nome e tipi crescono insieme */
+:root #dex-view .dex-list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 26px !important; }
+:root #dex-view .dex-card { padding-bottom: 20px !important; gap: 12px !important; contain-intrinsic-size: 300px; }
+:root #dex-view .dex-stage { height: 170px !important; }
+:root #dex-view .dex-stage > img.dex-static { width: 128px !important; height: 128px !important; }
+:root #dex-view .dex-card .dex-name { font-size: 20px !important; }
+:root #dex-view .dex-card .dex-num { font-size: 14px !important; top: 14px !important; left: 16px !important; }
+:root #dex-view .dex-card .badge.mini { font-size: 16px !important; }
+:root #dex-view .dex-card .badge.mini .ico { width: 26px !important; height: 26px !important; }
+:root #dex-view .dex-card .dex-types { gap: 8px !important; }
+@media (max-width: 560px) {
+  :root #dex-view .dex-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; }
+  :root #dex-view .dex-stage { height: 120px !important; }
+  :root #dex-view .dex-stage > img.dex-static { width: 96px !important; height: 96px !important; }
+  :root #dex-view .dex-card .dex-name { font-size: 16px !important; }
+  :root #dex-view .dex-card .badge.mini { font-size: 13px !important; }
+}
+
+/* ---------- Pokédex: scheda "Pavimento" (scelta dal prototipo-schede.html) ----------
+   I due tipi affiancati alla pari che sfumano nel chiaro verso l'alto, senza strisce; il Pokémon centrato sul suo
+   disegno con l'ombra sotto i piedi; in basso sul colore numero e nome a sinistra, icone dei tipi a destra */
+:root #dex-view .dex-list { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)) !important; gap: 18px !important; }
+:root #dex-view .dex-card { padding: 0 !important; gap: 0 !important; border-radius: 20px !important; contain-intrinsic-size: 196px; }
+:root #dex-view .dex-stage {
+  --lift: -22px; height: 196px !important; box-shadow: none !important;
+  background:
+    linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 0%, transparent) 70%),
+    linear-gradient(105deg, color-mix(in oklab, var(--c) 50%, var(--surface)) 0 30%, color-mix(in oklab, var(--c2) 50%, var(--surface)) 70% 100%) !important;
+}
+:root #dex-view .dex-stage > img.dex-static,
+:root #dex-view .dex-card:hover .dex-stage > img.dex-static {
+  width: 120px !important; height: 120px !important; top: 50% !important; left: 50% !important; z-index: 1;
+  transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px) + var(--lift))) !important;
+}
+:root #dex-view .dex-stage img.dex-anim { z-index: 1; }
+:root #dex-view .dex-stage::before {
+  content: ''; position: absolute; left: 50%; top: calc(50% + var(--lift) + var(--feet, 40px)); width: 84px; height: 12px; margin: -4px 0 0 -42px;
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 16, 12, .2), transparent);
+}
+:root #dex-view .dex-foot {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 10px 14px 12px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; text-align: left;
+}
+:root #dex-view .dex-label { min-width: 0; flex: 1; }
+:root #dex-view .dex-card .dex-num {
+  position: static !important; display: block; padding: 0 !important; background: none !important; box-shadow: none !important;
+  font-size: 11px !important; font-weight: 800; letter-spacing: .08em; color: color-mix(in srgb, var(--text) 50%, transparent);
+}
+:root #dex-view .dex-card .dex-num::before { content: none !important; }
+:root #dex-view .dex-card .dex-name { display: block; padding: 0 !important; font-size: 16px !important; line-height: 1.15; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root #dex-view .dex-card .dex-types { flex: none; flex-wrap: nowrap; gap: 4px !important; padding: 0 0 1px !important; }
+:root #dex-view .dex-card .badge.mini { font-size: 0 !important; gap: 0 !important; }
+:root #dex-view .dex-card .badge.mini .ico { width: 22px !important; height: 22px !important; }
+@media (max-width: 560px) {
+  :root #dex-view .dex-list { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; }
+  :root #dex-view .dex-stage { height: 176px !important; }
+  :root #dex-view .dex-stage > img.dex-static, :root #dex-view .dex-card:hover .dex-stage > img.dex-static { width: 104px !important; height: 104px !important; }
+  :root #dex-view .dex-card .dex-name { font-size: 15px !important; }
+}
+:root #dex-view .dex-card .dex-types { flex-direction: row !important; align-items: center; }
+
+/* ---------- Pokédex: scheda "Polaroid" con il paesaggio del tipo (paesaggi.js) ----------
+   cornice chiara, "foto" con il paesaggio (due tipi: si fondono al centro), grana leggera; didascalia sotto */
+:root #dex-view .dex-card { padding: 9px 9px 0 !important; contain-intrinsic-size: 214px; }
+:root #dex-view .dex-stage {
+  --lift: 0px; height: 150px !important; border-radius: 13px; overflow: hidden; background: #e9e1d2 !important;
+}
+:root #dex-view .dex-stage .scene { position: absolute; inset: 0; background: var(--scene) center / cover no-repeat; }
+:root #dex-view .dex-stage .scene + .scene {
+  -webkit-mask-image: linear-gradient(100deg, transparent 36%, #000 64%); mask-image: linear-gradient(100deg, transparent 36%, #000 64%);
+}
+:root #dex-view .dex-stage .grain { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; opacity: .9;
+  background:
+    radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(20, 12, 8, .22) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+/* Ombra a terra più decisa, per staccare il Pokémon dal paesaggio */
+:root #dex-view .dex-stage::before { z-index: 1; width: 84px; height: 14px; margin: -5px 0 0 -42px;
+  background: radial-gradient(closest-side, rgba(10, 8, 6, .38), transparent) !important; }
+:root #dex-view .dex-stage > img.dex-static, :root #dex-view .dex-stage img.dex-anim { z-index: 2; }
+:root #dex-view .dex-marks { z-index: 3; }
+/* Didascalia sotto la foto */
+:root #dex-view .dex-foot { position: static !important; padding: 10px 5px 12px !important; }
+@media (max-width: 560px) { :root #dex-view .dex-stage { height: 140px !important; } }
+/* Didascalia: su tutta la larghezza, tipi su una riga senza altezza minima ereditata */
+:root #dex-view .dex-foot { align-self: stretch; width: auto; }
+:root #dex-view .dex-card .dex-types { height: auto !important; min-height: 0 !important; margin: 0 !important; flex-wrap: nowrap !important; }
+
+/* Ricerche (Home e Pokédex): il campo è arrotondato del tutto e la sua curva a sinistra gira attorno al cerchio rosso
+   della lente, con lo stesso centro (in tangenza). La lente della Home sta sopra al campo anche quando, cliccandoci,
+   il campo si alza: prima finiva coperta e spariva */
+:root .home-search input { border-radius: 32px !important; padding-left: 66px !important; }
+:root .home-lens { z-index: 2; pointer-events: none; left: 11px !important; }
+:root .dex-search { border-radius: 30px !important; padding-left: 62px !important; background-position: 10px 50% !important; }
+
+/* ---------- Risultati della ricerca in Home: piccole Polaroid come nel Pokédex, centrate sotto il campo ----------
+   il Pokémon sul paesaggio del suo tipo, sotto numero e nome; quello scelto (frecce o mouse) ha l'anello rosso */
+:root .home-sugg { justify-content: center; gap: 14px !important; margin: 0 0 30px !important; }
+:root .home-hit {
+  display: flex !important; flex-direction: column; align-items: stretch; gap: 0 !important; width: 128px; height: auto !important;
+  padding: 7px 7px 10px !important; border: 0 !important; border-radius: 16px !important; text-align: left;
+  background: var(--surface) !important; color: var(--text) !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 8px 20px rgba(20, 16, 12, .08) !important;
+  transition: transform .25s cubic-bezier(.2, .9, .3, 1.2), box-shadow .25s ease !important;
+}
+:root .home-hit-pic { position: relative; display: grid; place-items: center; height: 84px; border-radius: 10px; overflow: hidden; background: #e9e1d2; margin-bottom: 7px; }
+:root .home-hit-pic .scene { position: absolute; inset: 0; background: var(--scene) center / cover no-repeat; }
+:root .home-hit-pic .scene + .scene { -webkit-mask-image: linear-gradient(100deg, transparent 36%, #000 64%); mask-image: linear-gradient(100deg, transparent 36%, #000 64%); }
+:root .home-hit-pic img { position: relative; z-index: 1; width: 80px !important; height: 80px !important; image-rendering: pixelated; }
+:root .home-hit-num { display: block; padding: 0 3px; font-size: 10px !important; font-weight: 800; letter-spacing: .08em; color: color-mix(in srgb, var(--text) 50%, transparent) !important; opacity: 1 !important; }
+:root .home-hit-name { display: block; padding: 0 3px; font-size: 14px; font-weight: 900; font-variation-settings: "wdth" 118; line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root .home-hit[aria-selected="true"] { background: var(--surface) !important; color: var(--text) !important;
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #c8553d, 0 10px 24px rgba(20, 16, 12, .12) !important; }
+@media (hover: hover) and (pointer: fine) { :root .home-hit:hover { transform: translateY(-3px) !important; } }
+:root .home-hit:active { transform: translateY(1px) !important; }
+/* Sei risultati su una riga sola su schermo largo */
+:root .home-sugg { gap: 12px !important; }
+:root .home-hit { width: 124px; }
+:root .home-hit-name { font-size: 13.5px; font-variation-settings: "wdth" 100; }
+
+/* ---------- Schede dei Pokémon in modalità scura ----------
+   cornice un po' più chiara dello sfondo con un filo di luce sul bordo e ombra profonda, così si staccano;
+   i paesaggi un filo più spenti, per non abbagliare sul fondo scuro */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #dex-view .dex-card, :root:not([data-theme="light"]) .home-hit {
+    background: #2c2621 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 240, 220, .07), 0 0 0 1px rgba(255, 240, 220, .06), 0 10px 26px rgba(0, 0, 0, .45) !important;
+  }
+  :root:not([data-theme="light"]) #dex-view .dex-stage, :root:not([data-theme="light"]) .home-hit-pic { box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); }
+  :root:not([data-theme="light"]) #dex-view .dex-stage .scene, :root:not([data-theme="light"]) .home-hit-pic .scene { filter: brightness(.86) saturate(.95); }
+  :root:not([data-theme="light"]) #dex-view .dex-card .dex-num, :root:not([data-theme="light"]) .home-hit-num { color: rgba(240, 228, 210, .5) !important; }
+  :root:not([data-theme="light"]) .home-hit[aria-selected="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #e07a5f, 0 10px 26px rgba(0, 0, 0, .45) !important; }
+  @media (hover: hover) and (pointer: fine) {
+    :root:not([data-theme="light"]) #dex-view .dex-card:hover { box-shadow: inset 0 1px 0 rgba(255, 240, 220, .09), 0 0 0 1px rgba(255, 240, 220, .1), 0 18px 36px rgba(0, 0, 0, .55) !important; }
+  }
+}
+:root[data-theme="dark"] #dex-view .dex-card, :root[data-theme="dark"] .home-hit {
+  background: #2c2621 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 220, .07), 0 0 0 1px rgba(255, 240, 220, .06), 0 10px 26px rgba(0, 0, 0, .45) !important;
+}
+:root[data-theme="dark"] #dex-view .dex-stage, :root[data-theme="dark"] .home-hit-pic { box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); }
+:root[data-theme="dark"] #dex-view .dex-stage .scene, :root[data-theme="dark"] .home-hit-pic .scene { filter: brightness(.86) saturate(.95); }
+:root[data-theme="dark"] #dex-view .dex-card .dex-num, :root[data-theme="dark"] .home-hit-num { color: rgba(240, 228, 210, .5) !important; }
+:root[data-theme="dark"] .home-hit[aria-selected="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #e07a5f, 0 10px 26px rgba(0, 0, 0, .45) !important; }
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme="dark"] #dex-view .dex-card:hover { box-shadow: inset 0 1px 0 rgba(255, 240, 220, .09), 0 0 0 1px rgba(255, 240, 220, .1), 0 18px 36px rgba(0, 0, 0, .55) !important; }
+}
+
+
+/* Campi di ricerca più piccoli (Home, Pokédex, Abilità, Oggetti): più bassi e più stretti, testo e lente ridotti;
+   la curva a sinistra resta in tangenza con il cerchio della lente (stesso centro) */
+:root .home-search { max-width: 560px !important; }
+:root .home-search input { height: 50px !important; border-radius: 25px !important; padding: 0 18px 0 52px !important; font-size: 16px !important; }
+:root .home-lens { left: 8px !important; width: 34px !important; height: 34px !important; margin-top: -17px !important; padding: 8px !important; }
+:root .dex-search { max-width: 560px; height: 50px !important; border-radius: 25px !important; padding: 0 18px 0 52px !important; font-size: 16px !important;
+  background-position: 8px 50% !important; background-size: 34px !important; }
+
+/* ---------- Font dei testi: Figtree (scelto da prototipo-font.html) ----------
+   descrizioni, spiegazioni, didascalie, filtri e liste in Figtree, più leggibile nei testi lunghi;
+   titoli, nomi in evidenza, numeri ed etichette larghe restano in Archivo, che dà il carattere al sito */
+:root { --font-body: 'Varela Round', Figtree, system-ui, sans-serif; } /* prova: Varela Round (prima Quicksand, Figtree) */
+body, button, input, select, textarea { font-family: var(--font-body); }
+:is(#chart-view h2, #coverage-view h2, .answer-row .lbl, .brush, .btn, .calc-row .lbl, .calc-row .word, .calc-stats b, .calc-stats span, .cmp-body h3, .cmp-card strong, .cov-counts a, .cov-counts a span, .cov-group .lbl, .cry-alt, .cry-btn, .dex, .dex-card .dex-name, .dex-card .dex-num, .dex-gen, .dex-move-controls select, .dex-move-table .lv, .dex-name, .dex-num, .dex-region, .dex-reset, .dex-sec h3, .dex-title h2, .home-hit, .home-hit-name, .home-hit-num, .home-kicker, .home-name, .home-tile, .home-tile strong, .matrix td, .mon-info h2, .moves .num, .moves th, .reg-city-txt h4, .reg-gym-info strong, .reg-h, .reg-title, .reg-txt strong, .result h3, .shiny-toggle, .stat-row b, .stats b, .stats span, .tabs button, .tcg-info h3, .tile, .tile .val, h1, h2, h3, h4) { font-family: Archivo, system-ui, sans-serif; }
+/* Varela Round ha un solo spessore: testi al peso normale */
+body { font-weight: 400; }
+
+/* Mappe delle regioni: passando su un cerchio compare il nome della città, in un'etichetta scura che sale appena */
+:root .reg-tip {
+  position: absolute; bottom: calc(100% + 2px); left: 50%; z-index: 3; pointer-events: none; white-space: nowrap;
+  padding: 6px 11px; border-radius: 9px; background: #221d19; color: #fbf8f2;
+  font: 800 13px/1.1 Archivo, system-ui, sans-serif; font-variation-settings: "wdth" 110; letter-spacing: .01em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+  opacity: 0; transform: translate(-50%, 4px); transition: opacity .18s ease, transform .2s cubic-bezier(.2, .9, .3, 1.2);
+}
+:root .reg-pin.tip-below .reg-tip { bottom: auto; top: calc(100% + 2px); transform: translate(-50%, -4px); }
+:root .reg-pin.tip-left .reg-tip { left: 0; transform: translate(0, 4px); }
+:root .reg-pin.tip-right .reg-tip { left: auto; right: 0; transform: translate(0, 4px); }
+:root .reg-pin:is(:hover, :focus-visible) { z-index: 4; }
+:root .reg-pin:is(:hover, :focus-visible) .reg-tip { opacity: 1; transform: translate(-50%, 0); }
+:root .reg-pin.tip-left:is(:hover, :focus-visible) .reg-tip, :root .reg-pin.tip-right:is(:hover, :focus-visible) .reg-tip { transform: translate(0, 0); }
+
+/* ---------- Regioni come le altre pagine: niente foglio dietro (elenco e pagina della regione);
+   copertina e mappa senza la cornice nera e l'ombra netta, solo angoli tondi e un'ombra morbida ---------- */
+:root #regions-view:not([hidden]) { background: none !important; box-shadow: none !important; padding: 0 16px 56px !important; }
+:root .reg-cover, :root .reg-map {
+  border: 0 !important; border-radius: 22px !important;
+  box-shadow: 0 2px 4px rgba(20, 16, 12, .08), 0 16px 40px rgba(20, 16, 12, .16) !important;
+}
+:root .reg-city-img { border-radius: 16px; box-shadow: 0 2px 4px rgba(20, 16, 12, .08), 0 12px 30px rgba(20, 16, 12, .14); }
+
+/* Regioni: un'ombra morbida per staccare dallo sfondo le mappe dell'elenco e gli sprite
+   (iniziali, capipalestra, illustrazione del capopalestra, squadre); sugli sprite è un'ombra che segue la sagoma */
+:root .reg-img { box-shadow: 0 2px 4px rgba(20, 16, 12, .08), 0 12px 28px rgba(20, 16, 12, .16); }
+:root .reg-starters img, :root .reg-starter-row img, :root .reg-trainer, :root .reg-city-leader img, :root .reg-team img {
+  filter: drop-shadow(0 3px 3px rgba(20, 16, 12, .22)) drop-shadow(0 10px 14px rgba(20, 16, 12, .14));
+}
+/* Ombra degli sprite: non più spostata sotto la sagoma, ma un'ellisse a terra sotto i piedi (come nel Pokédex),
+   disegnata come sfondo dell'immagine, dietro ai pixel trasparenti */
+:root .reg-starters img, :root .reg-starter-row img, :root .reg-trainer, :root .reg-city-leader img, :root .reg-team img { filter: none; }
+:root .reg-starters img, :root .reg-starter-row img, :root .reg-team img {
+  background: radial-gradient(closest-side, rgba(20, 16, 12, .26), transparent) no-repeat 50% 79% / 58% 11%;
+}
+:root .reg-trainer { background: radial-gradient(closest-side, rgba(20, 16, 12, .26), transparent) no-repeat 50% 92% / 56% 8%; }
+:root .reg-city-leader img { background: radial-gradient(closest-side, rgba(20, 16, 12, .24), transparent) no-repeat 50% 99% / 70% 6%; }
+
+/* Sprite delle Regioni come adesivi (scelto da prototipo-sprite.html, B): niente ombra a terra,
+   un contorno bianco attorno alla sagoma e una leggerissima ombra sotto il contorno */
+:root .reg-starters img, :root .reg-starter-row img, :root .reg-trainer, :root .reg-city-leader img, :root .reg-team img {
+  background: none !important;
+  filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(0 2px 3px rgba(20, 16, 12, .18));
+}
+
+/* Copertina della regione senza contorni: niente angoli, ombra o fondo; i bordi sfumano nello sfondo della pagina */
+:root .reg-cover {
+  border-radius: 0 !important; box-shadow: none !important; background: none !important;
+  /* due sfumature lineari (orizzontale e verticale) intersecate: bordi morbidi su tutti e quattro i lati, fino al trasparente */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 14%, #000 80%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, transparent, #000 14%, #000 80%, transparent);
+  mask-composite: intersect;
+}
+
+/* ---------- Abilità, Oggetti e Mosse come l'elenco del Pokédex ----------
+   niente foglio (vedi sopra); ogni voce è una tessera chiara in rilievo che si alza al passaggio;
+   gli oggetti hanno l'icona su un riquadro del colore del loro gruppo; le mosse il paesaggio del loro tipo */
+:root .cmp-list { row-gap: 18px !important; column-gap: 18px !important; align-items: stretch !important; margin-top: 8px; }
+:root .cmp-list > .cmp-card { margin-bottom: 0 !important; }
+:root .cmp-card:not(.zoom-card) {
+  border: 0 !important; border-radius: 18px !important; background: var(--surface) !important;
+  box-shadow: 0 1px 2px rgba(20, 16, 12, .06), 0 8px 22px rgba(20, 16, 12, .08) !important;
+  transition: transform .25s cubic-bezier(.2, .9, .3, 1.2), box-shadow .25s ease !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root .cmp-card:not(.zoom-card):hover { transform: translateY(-3px) !important; box-shadow: 0 2px 4px rgba(20, 16, 12, .08), 0 16px 34px rgba(20, 16, 12, .14) !important; }
+  :root .cmp-card:not(.zoom-card):hover strong { text-decoration: none; }
+}
+:root .cmp-card:not(.zoom-card):active { transform: translateY(1px) !important; }
+:root .cmp-list > .cmp-card:not(.zoom-card) .cmp-sum { padding: 16px 20px 18px !important; }
+:root .cmp-card strong { font-size: 18px; font-variation-settings: "wdth" 115; }
+:root .cmp-card .cmp-en { font-size: 12px; color: var(--muted); }
+/* Oggetti */
+:root .cmp-items > .cmp-card:not(.zoom-card) .cmp-sum { padding: 10px 14px !important; }
+:root .cmp-item strong { font-size: 15px; }
+:root .cmp-ico { width: 46px; height: 46px; border-radius: 13px; background: color-mix(in oklab, var(--g, #a39a8e) 24%, var(--surface)) !important; }
+:root .cmp-ico img { width: 34px; height: 34px; }
+/* Mosse: tessera orizzontale; a sinistra il paesaggio del tipo con l'icona del tipo e quella della categoria */
+:root .cmp-moves { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important; }
+:root .cmp-move .cmp-sum { flex-direction: row !important; align-items: center; gap: 14px !important; padding: 9px 16px 9px 9px !important; }
+:root .cmp-moves > .cmp-card:not(.zoom-card) .cmp-sum { padding: 9px 16px 9px 9px !important; }
+:root .mv-pic { position: relative; flex: none; width: 78px; height: 78px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: #e9e1d2; }
+:root .mv-pic .scene { position: absolute; inset: 0; background: var(--scene) center / cover no-repeat; }
+:root .mv-pic > .ico { position: relative; z-index: 1; width: 36px !important; height: 36px !important; box-shadow: 0 0 0 3px rgba(255, 255, 255, .85), 0 4px 10px rgba(0, 0, 0, .25) !important; }
+:root .mv-cls { position: absolute; z-index: 1; right: 5px; bottom: 5px; line-height: 0; }
+:root .mv-cls svg { width: 26px; height: 16px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); }
+:root .mv-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+:root .mv-txt strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 17px; }
+:root .mv-stats { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 5px; font-size: 12.5px; color: var(--muted); }
+:root .mv-stats b { color: var(--text); font-family: Archivo, system-ui, sans-serif; font-weight: 900; font-variation-settings: "wdth" 110; }
+/* Filtri delle mosse: i tipi come icone tonde (attenuate quando uno è scelto), poi la categoria */
+:root .mv-types { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 760px; margin: 0 auto; }
+:root .mv-type-btn { appearance: none; border: 0; background: none; padding: 3px; border-radius: 50%; cursor: pointer; line-height: 0;
+  transition: transform .2s cubic-bezier(.2, .9, .3, 1.3), opacity .2s ease; }
+:root .mv-type-btn .ico { width: 34px !important; height: 34px !important; box-shadow: 0 2px 0 color-mix(in srgb, var(--text) 18%, transparent) !important; }
+:root .mv-types.picking .mv-type-btn:not([aria-pressed="true"]) { opacity: .32; }
+:root .mv-type-btn[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text); }
+@media (hover: hover) and (pointer: fine) { :root .mv-type-btn:hover { transform: translateY(-2px) scale(1.08); opacity: 1 !important; } }
+:root #mv-view .cmp-filters { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+:root .cmp-none { grid-column: 1 / -1; text-align: center; }
+/* Scheda grande di una mossa: dati in colonne come nella scheda dei Pokémon */
+:root .mv-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px 18px; margin: 18px 0 4px; }
+:root .mv-facts dt { font-size: 12px; color: var(--muted); }
+:root .mv-facts dd { margin: 2px 0 0; font-weight: 800; font-family: Archivo, system-ui, sans-serif; font-variation-settings: "wdth" 110; font-size: 16px; }
+:root .zoom-card.cmp-move .cmp-sum { padding: 18px 22px 6px !important; }
+:root .zoom-card .mv-pic { width: 92px; height: 92px; }
+:root .mv-learners .cov-list { margin-top: 12px; }
+/* In modalità scura le tessere come quelle del Pokédex */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .cmp-card:not(.zoom-card) { background: #2c2621 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 240, 220, .07), 0 0 0 1px rgba(255, 240, 220, .06), 0 10px 26px rgba(0, 0, 0, .45) !important; }
+  :root:not([data-theme="light"]) .mv-pic .scene { filter: brightness(.86) saturate(.95); }
+}
+:root[data-theme="dark"] .cmp-card:not(.zoom-card) { background: #2c2621 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 220, .07), 0 0 0 1px rgba(255, 240, 220, .06), 0 10px 26px rgba(0, 0, 0, .45) !important; }
+:root[data-theme="dark"] .mv-pic .scene { filter: brightness(.86) saturate(.95); }
+:root .mv-types { gap: 6px; max-width: 820px; }
+:root .mv-type-btn .ico { width: 32px !important; height: 32px !important; }
+/* Scheda grande (Abilità, Oggetti, Mosse): niente bordo nero né ombra netta, solo angoli tondi e un'ombra morbida */
+:root .zoom-frame { border: 0 !important; border-radius: 22px !important; box-shadow: 0 4px 10px rgba(20, 16, 12, .12), 0 30px 70px rgba(20, 16, 12, .28) !important; }
+:root .zoom-card, :root .zoom-fill { border-radius: 22px !important; }
+/* Mosse: simbolo della categoria (quello dei giochi) subito dopo il nome, fuori dal paesaggio */
+:root .mv-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+:root .mv-name .mv-cls { position: static; flex: none; line-height: 0; }
+:root .mv-name .mv-cls svg { width: 28px; height: 18px; filter: none; }
+/* Elenchi dentro la scheda grande: nota sotto la riga del pulsante e titolo "Come abilità nascosta" */
+:root .mv-learn-hint { margin: 12px 0 0 !important; font-size: 13px; }
+:root .mv-learners h3 { margin: 20px 0 0; font-size: 15px; }
+:root .mv-learners .cmp-note { color: #c8553d; font-weight: 800; }
+:root .zoom-card .cmp-body > .cmp-tech:first-child h3 { margin-top: 14px !important; }
+/* Spiegazione in inglese subito sotto la descrizione italiana, più piccola e tenue */
+:root .cmp-en-desc { margin: 6px 0 0; font-size: 14px; line-height: 1.45; color: var(--muted); max-width: 64ch; }
+:root .zoom-card .cmp-body > .cmp-en-desc:first-child { margin-top: -2px; }
+:root .cmp-en-desc + .mv-facts { margin-top: 20px; }
+:root .cmp-en-desc + .cmp-held { margin-top: 18px; }
+
+/* Ricerca unica della Home: tessere dei risultati diverse per tipo, stessa forma delle Polaroid dei Pokémon */
+:root .home-hit-pic > .ico { position: relative; z-index: 1; width: 32px !important; height: 32px !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .85), 0 4px 10px rgba(0, 0, 0, .25) !important; }
+:root .home-hit-ability .home-hit-pic { background: linear-gradient(135deg, #f3d9a8, #e9a98a); }
+:root .home-hit-glyph { width: 40px; height: 40px; fill: #fbf8f2; filter: drop-shadow(0 2px 3px rgba(120, 50, 30, .35)); }
+:root .home-hit-item .home-hit-pic { background: color-mix(in oklab, var(--g, #a39a8e) 26%, var(--surface)); }
+:root .home-hit-pic img.home-hit-item { width: 40px !important; height: 40px !important; }
+:root .home-hit-pic img.home-hit-trainer { width: 64px !important; height: 64px !important;
+  filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff); }
+:root .home-hit:not(.home-hit-mon) .home-hit-num { color: #c8553d !important; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root .home-hit-pic > .ico img { width: 60% !important; height: 60% !important; }
+/* Nomi lunghi su due righe invece che tagliati */
+:root .home-hit-name { white-space: normal !important; display: -webkit-box !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 1.15; }
+:root .home-sugg { align-items: flex-start; }
+
+/* ---------- Ricerca della Home: tendina a gruppi (scelta da prototipo-ricerca.html, B) ----------
+   un riquadro chiaro sotto il campo; per ogni categoria un titoletto e le sue righe: immagine piccola,
+   nome con il pezzo cercato in rosso, nome inglese a destra; la riga scelta (frecce o mouse) è appena tinta */
+:root .home-sugg {
+  display: block !important; max-width: 560px; margin: 2px auto 30px !important; padding: 8px !important;
+  background: var(--surface); border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(20, 16, 12, .06), 0 14px 34px rgba(20, 16, 12, .12);
+}
+:root .home-sugg .hint { margin: 10px 12px; }
+:root .home-group { margin: 0; padding: 10px 12px 4px; font: 800 10.5px/1 Archivo, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+:root .home-row {
+  appearance: none; border: 0; background: none; width: 100%; display: flex; align-items: center; gap: 12px; padding: 5px 12px;
+  border-radius: 12px; color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: background-color .15s ease;
+}
+:root .home-row[aria-selected="true"] { background: color-mix(in srgb, #c8553d 11%, var(--surface)); }
+:root .home-row-pic { flex: none; width: 34px; height: 34px; display: grid; place-items: center; }
+:root .home-row-pic img { width: 44px; height: 44px; image-rendering: pixelated; object-fit: contain; }
+:root .home-row-item .home-row-pic img { width: 30px; height: 30px; }
+:root .home-row-pic img.home-row-trainer { width: 38px; height: 38px; }
+:root .home-row-pic .ico { width: 26px !important; height: 26px !important; box-shadow: none !important; }
+:root .home-row-pic .ico img { width: 60% !important; height: 60% !important; }
+:root .home-row-ab { width: 26px; height: 26px; }
+:root .home-row-name { font: 800 15px/1.2 Archivo, system-ui, sans-serif; font-variation-settings: "wdth" 110; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root .home-row-en { margin-left: auto; padding-left: 10px; flex: none; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+:root .home-row mark { background: none; color: #c8553d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .home-sugg { background: #2c2621; box-shadow: 0 0 0 1px rgba(255, 240, 220, .06), 0 14px 34px rgba(0, 0, 0, .45); } }
+:root[data-theme="dark"] .home-sugg { background: #2c2621; box-shadow: 0 0 0 1px rgba(255, 240, 220, .06), 0 14px 34px rgba(0, 0, 0, .45); }
+/* La tendina vuota non deve comparire (prima restava una barretta sotto il campo) */
+:root .home-sugg[hidden] { display: none !important; }
+
+/* ---------- Pokédex: filtri più compatti ----------
+   i tipi come sole icone tonde su una riga (il nome compare passandoci sopra), come nella sezione Mosse;
+   meno spazio tra le righe; il primo titolo di regione più vicino ai filtri */
+:root #dex-browse .dex-filters { gap: 14px !important; }
+:root #dex-types { gap: 6px !important; max-width: 820px; }
+:root #dex-types .badge.pick {
+  font-size: 0 !important; gap: 0 !important; padding: 3px !important; margin: 0 !important; height: auto !important;
+  border: 0 !important; border-radius: 50% !important; background: none !important; box-shadow: none !important; min-width: 0 !important;
+  transition: transform .2s cubic-bezier(.2, .9, .3, 1.3), opacity .2s ease;
+}
+:root #dex-types .badge.pick .ico { width: 32px !important; height: 32px !important; margin: 0 !important;
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--text) 18%, transparent) !important; opacity: 1 !important; filter: none !important; }
+:root #dex-types.picking .badge.pick:not([aria-pressed="true"]) { opacity: .32; }
+:root #dex-types .badge.pick[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text) !important; }
+@media (hover: hover) and (pointer: fine) { :root #dex-types .badge.pick:hover { transform: translateY(-2px) scale(1.08); opacity: 1; } }
+:root #dex-list > .dex-region:first-child { margin-top: 10px !important; }
+/* Icone dei tipi a colori pieni; attenuate solo quando se ne sceglie uno */
+:root #dex-types .badge.pick { opacity: 1 !important; }
+:root #dex-types.picking .badge.pick:not([aria-pressed="true"]) { opacity: .32 !important; }
+@media (hover: hover) and (pointer: fine) { :root #dex-types .badge.pick:hover { opacity: 1 !important; } }
+/* Pokédex: mentre si cerca l'elenco resta alto almeno quanto la finestra (la pagina non si accorcia e non salta) */
+:root #dex-list.searching { min-height: 100vh; align-content: start; }
+
+/* Tipo scelto (Pokédex e Mosse): niente anello nero; un anello sottile del colore del tipo, staccato appena
+   dall'icona e contenuto nel pulsante, così due tipi vicini non si sovrappongono */
+:root #dex-types .badge.pick[aria-pressed="true"], :root .mv-type-btn[aria-pressed="true"] { box-shadow: none !important; }
+:root #dex-types .badge.pick, :root .mv-type-btn { padding: 5px !important; }
+:root #dex-types, :root .mv-types { gap: 4px !important; }
+:root #dex-types .badge.pick[aria-pressed="true"] .ico, :root .mv-type-btn[aria-pressed="true"] .ico {
+  box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 4.5px var(--c) !important;
+}
+:root #dex-types .badge.pick, :root .mv-type-btn { padding: 4px !important; }
+:root #dex-types, :root .mv-types { gap: 3px !important; }
+
+/* ---------- Quiz: pulsanti più compatti e correzione più semplice ----------
+   moltiplicatori: una fila centrata di tasti più piccoli (non più cinque tessere su tutta la larghezza);
+   dopo la verifica niente contorni tratteggiati attorno alle caselle (si accavallavano tra vicine) né
+   cartellini neri sopra: un anello dentro la casella (verde se giusta, rosso se sbagliata) e, a destra,
+   il valore giusto in verde accanto al tuo barrato */
+:root #quiz-view .brush-row { display: flex !important; justify-content: center; flex-wrap: wrap; gap: 10px !important; }
+:root #quiz-view .brush { height: 44px !important; min-width: 78px; padding: 0 16px !important; border-radius: 14px !important; font-size: 17px !important; }
+:root #quiz-view .brush .dot { display: none; }
+
+:root #quiz-view .tile::before { display: none !important; }
+:root #quiz-view .tile.ok { box-shadow: inset 0 0 0 2.5px var(--ok), 0 2px 6px rgba(20, 16, 12, .06) !important; }
+:root #quiz-view .tile.bad, :root #quiz-view .tile.extra, :root #quiz-view .tile.miss { box-shadow: inset 0 0 0 2.5px var(--bad), 0 2px 6px rgba(20, 16, 12, .06) !important; }
+:root #quiz-view .tile .fix {
+  top: 50% !important; right: 8px !important; transform: translateY(-50%); height: 26px; min-width: 40px; padding: 0 8px !important;
+  display: grid; place-items: center; border-radius: 999px !important; background: var(--ok) !important; color: #fbf8f2 !important;
+  font-size: 14px !important; box-shadow: none !important;
+}
+:root #quiz-view .tile.bad .val, :root #quiz-view .tile.extra .val {
+  right: 56px !important; text-decoration: line-through; text-decoration-thickness: 2px; opacity: .55; background: none !important; min-width: 0;
+}
+:root #quiz-view .tile.miss .val { display: none; }
+/* Esito: titolo, una riga di spiegazione, poi la risposta giusta raggruppata */
+:root #quiz-view .result h3 { margin: 0 0 6px; }
+:root #quiz-view .result-hint { margin: 0 0 14px; font-size: 14px; color: var(--muted); }

@@ -1,0 +1,863 @@
+/* =====================================================================
+   Pokéncarta — tema "corsa anni '70"
+   Carta crema, inchiostro caldo, strisce da livrea (ruggine / salvia / petrolio),
+   piste curve sullo sfondo e angoli squadrati-arrotondati. Si carica dopo styles.css
+   e ne sovrascrive solo l'aspetto.
+   ===================================================================== */
+
+:root {
+  --bg: #f3ede2;          /* carta */
+  --surface: #fbf8f2;
+  --surface-2: #ebe3d4;
+  --text: #221d19;        /* inchiostro caldo */
+  --muted: #776d62;
+  --border: #d6cbb8;
+  --accent: #c8553d;      /* ruggine */
+  --rust: #c8553d;
+  --sage: #8fb3a0;
+  --teal: #1f6f78;
+  --track: #b5552f;       /* linee delle piste */
+  --ok: #3f8a5a;
+  --bad: #c0392b;
+  --warn: #c98a1b;
+  --shadow: none;
+  --r-lg: 14px;
+  --r-md: 10px;
+  --r-sm: 6px;
+  --font-body: Archivo, system-ui, sans-serif;
+  --font-display: Audiowide, Archivo, sans-serif; /* solo logo: lo zero di Audiowide è barrato */
+  --font-num: Archivo, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1714;
+    --surface: #24201c;
+    --surface-2: #2f2924;
+    --text: #f1e9dc;
+    --muted: #a99d8e;
+    --border: #3d3530;
+    --accent: #d8684f;
+    --rust: #d8684f;
+    --sage: #8fb3a0;
+    --teal: #3b9aa3;
+    --track: #c9714d;
+    --ok: #6fc28c;
+    --bad: #ef6b5c;
+    --warn: #e5a83c;
+  }
+}
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+  :root[data-theme="dark"] {
+    --bg: #1b1714;
+    --surface: #24201c;
+    --surface-2: #2f2924;
+    --text: #f1e9dc;
+    --muted: #a99d8e;
+    --border: #3d3530;
+    --accent: #d8684f;
+    --rust: #d8684f;
+    --sage: #8fb3a0;
+    --teal: #3b9aa3;
+    --track: #c9714d;
+    --ok: #6fc28c;
+    --bad: #ef6b5c;
+    --warn: #e5a83c;
+  }
+
+
+/* ---------- Base, grana, piste sullo sfondo ---------- */
+
+body {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-variation-settings: "wdth" 100;
+  background-color: var(--bg);
+  background-image: none;
+}
+/* Grana da carta stampata */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 50; pointer-events: none;
+  opacity: .07; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body::after { mix-blend-mode: screen; opacity: .05; }
+}
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+  :root[data-theme="dark"] body::after { mix-blend-mode: screen; opacity: .05; }
+
+main { position: relative; z-index: 1; }
+h2, h3 { font-variation-settings: "wdth" 118; letter-spacing: -.01em; }
+
+/* ---------- Header: logo + strisce diagonali ---------- */
+
+.top { position: relative; z-index: 2; padding-top: 22px; padding-bottom: 20px; align-items: center; }
+.logo { margin: 0; line-height: 0; color: var(--text); }
+.logo svg { display: block; width: min(360px, 100%); height: auto; overflow: visible; }
+.logo-track { stroke: var(--text); }
+.logo-word { font-family: var(--font-display); font-size: 46px; fill: var(--text); }
+
+/* Fasce da livrea che entrano dall'angolo in alto a destra */
+.stripes {
+  position: fixed; top: -140px; right: -160px; width: 520px; height: 520px;
+  z-index: 0; pointer-events: none; transform: rotate(38deg);
+  display: flex; gap: 10px;
+}
+.stripes i { display: block; flex: none; height: 200%; margin-top: -50%; }
+.stripes i:nth-child(1) { width: 34px; background: var(--sage); }
+.stripes i:nth-child(2) { width: 58px; background: var(--rust); }
+.stripes i:nth-child(3) { width: 22px; background: var(--teal); }
+.stripes i:nth-child(4) { width: 8px; background: var(--rust); opacity: .6; }
+@media (max-width: 900px) { .stripes { opacity: .35; } }
+@media (max-width: 560px) { .stripes { top: -220px; right: -260px; opacity: .3; } }
+
+/* Schede: barra squadrata a inchiostro */
+.tabs {
+  background: transparent; padding: 0; gap: 0; border-radius: var(--r-sm);
+  border: 2px solid var(--text); overflow: hidden;
+}
+.tabs button {
+  border-radius: 0; height: 36px; color: var(--text); font-weight: 800; font-size: 13px;
+  font-variation-settings: "wdth" 112; letter-spacing: .02em;
+}
+.tabs button + button { border-left: 2px solid var(--text); }
+.tabs button[aria-current="page"] { background: var(--text); color: var(--bg); box-shadow: none; }
+@media (hover: hover) and (pointer: fine) {
+  .tabs button:not([aria-current="page"]):hover { background: var(--surface-2); }
+}
+
+/* ---------- Superfici: piatte, con bordo sottile e una "striscia" a sinistra ---------- */
+
+.mon, .calc, .matrix-card, .result {
+  border-radius: var(--r-lg); box-shadow: none;
+  background: var(--surface); border: 1.5px solid var(--border);
+}
+.mon { position: relative; overflow: hidden; }
+.mon::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
+  background: linear-gradient(90deg, var(--rust) 0 50%, var(--sage) 50% 75%, var(--teal) 75%);
+}
+.mon { padding-left: 26px; }
+.sprite-wrap {
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(ellipse 60% 14% at 50% 84%, rgba(60, 35, 20, .18), transparent 70%),
+    repeating-linear-gradient(-38deg, transparent 0 14px, color-mix(in srgb, var(--track) 9%, transparent) 14px 16px),
+    var(--surface-2);
+}
+.dex { font-weight: 800; letter-spacing: .12em; font-size: 12px; font-variation-settings: "wdth" 125; color: var(--rust); }
+.mon-info h2 { font-weight: 900; font-variation-settings: "wdth" 125; letter-spacing: -.02em; }
+.prompt { color: var(--muted); }
+
+#chart-view h2, #coverage-view h2 { font-weight: 900; font-variation-settings: "wdth" 125; }
+.calc-block { border-radius: var(--r-md); background: var(--surface-2); }
+.result { border-left-width: 8px; }
+
+/* Statistiche come cruscotto */
+.stats span { font-variation-settings: "wdth" 112; }
+.stats b { font-weight: 900; font-variation-settings: "wdth" 125; }
+
+/* ---------- Badge dei tipi: rettangoli arrotondati da targa ---------- */
+
+/* Colori dei tipi leggermente "stampati": un filo più caldi e meno saturi */
+.tile, .badge, .ico { background-color: color-mix(in oklab, var(--c) 84%, #7a5a40); }
+
+.badge { border-radius: var(--r-sm); font-weight: 800; font-variation-settings: "wdth" 108; }
+.ico { box-shadow: 0 0 0 2px rgba(255, 250, 240, .9); }
+.badge.pick[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* ---------- Pennelli (moltiplicatori) ---------- */
+
+.brushes { background: color-mix(in srgb, var(--bg) 90%, transparent); }
+.brush {
+  border-radius: var(--r-sm); border: 2px solid var(--text); background: var(--surface);
+  font-family: var(--font-num); font-weight: 900; font-variation-settings: "wdth" 125; font-size: 18px;
+}
+.brush .dot { border-radius: 2px; width: 12px; height: 12px; }
+.brush.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+.brush.on .dot { box-shadow: 0 0 0 2px var(--bg); }
+.brush kbd { color: inherit; opacity: .55; }
+@media (hover: hover) and (pointer: fine) { .brush:not(.on):hover { background: var(--surface-2); } }
+
+/* ---------- Caselle dei tipi ---------- */
+
+.tile {
+  border-radius: var(--r-md); font-weight: 800; font-variation-settings: "wdth" 110;
+  /* filetto chiaro interno, come una targhetta */
+  box-shadow: inset 0 0 0 2px rgba(255, 250, 240, .22);
+}
+.tile .ico { width: 34px; height: 34px; }
+.tile .val { border-radius: var(--r-sm); font-weight: 900; font-variation-settings: "wdth" 125; background: #fbf8f2; }
+.tile .fix { border-radius: var(--r-sm); background: var(--text); color: var(--bg); box-shadow: none; }
+
+/* ---------- Pulsanti ---------- */
+
+.btn { border-radius: var(--r-sm); font-weight: 900; font-variation-settings: "wdth" 120; letter-spacing: .02em; }
+.btn.primary {
+  background: var(--rust); color: #fbf8f2;
+  /* tre filetti da livrea in basso */
+  background-image: linear-gradient(var(--sage), var(--sage)), linear-gradient(var(--teal), var(--teal));
+  background-size: 100% 4px, 100% 3px;
+  background-position: 0 calc(100% - 7px), 0 100%;
+  background-repeat: no-repeat;
+}
+.btn.ghost { background: transparent; border: 2px solid var(--text); color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  .btn.primary:not(:disabled):hover { filter: brightness(1.06); }
+  .btn.ghost:not(:disabled):hover { background: var(--surface-2); }
+}
+
+/* ---------- Risultato e righe di soluzione ---------- */
+
+.answer-row .lbl, .cov-group .lbl, .cov-counts a {
+  border-radius: var(--r-sm); font-weight: 900; font-variation-settings: "wdth" 125;
+}
+.result h3 { font-variation-settings: "wdth" 125; font-weight: 900; }
+
+/* ---------- Tabella ---------- */
+
+.matrix td { border-radius: 4px; font-weight: 900; font-variation-settings: "wdth" 125; }
+.matrix td:not([data-m]) { background: var(--surface-2); }
+.legend i { border-radius: 3px; }
+
+/* ---------- Copertura ---------- */
+
+.cov-bar { border-radius: 3px; height: 16px; gap: 3px; }
+.cov-counts a span { font-weight: 900; font-variation-settings: "wdth" 125; }
+.cov-mon { border-radius: var(--r-md); }
+.moves-scroll { border-radius: var(--r-md); border-width: 1.5px; }
+.moves th { background: var(--surface-2); color: var(--text); letter-spacing: .08em; font-variation-settings: "wdth" 120; }
+.moves .num { font-weight: 800; font-variation-settings: "wdth" 120; }
+.fx, .hist-btn { border-radius: 4px; }
+.hist-btn[aria-pressed="true"] { background: var(--rust); border-color: var(--rust); color: #fbf8f2; }
+
+/* ---------- Impostazioni ---------- */
+
+.settings fieldset { border-radius: var(--r-md); }
+.settings summary, .cov-forms { font-variation-settings: "wdth" 108; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--rust); }
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 560px) {
+  .top { padding-top: 16px; gap: 14px; }
+  .logo svg { width: min(320px, 100%); }
+  .tabs button { font-size: 11.5px; height: 34px; font-variation-settings: "wdth" 100; }
+  .mon { padding-left: 22px; }
+  .brush { font-size: 16px; }
+}
+
+/* ---------- Moltiplicatori nella palette '70 ---------- */
+/* --m: testo/accenti · --ink: valore sul chip chiaro · --cell: celle e barre */
+[data-m="4"]    { --m: #9e3a26; --ink: #9e3a26; --cell: #9e3a26; }
+[data-m="2"]    { --m: #c8553d; --ink: #b4472f; --cell: #c8553d; }
+[data-m="1"]    { --m: #776d62; --cell: #c9bfae; }
+[data-m="0.5"]  { --m: #4f8a6a; --ink: #3d7558; --cell: #5f9677; }
+[data-m="0.25"] { --m: #1f6f78; --ink: #1f6f78; --cell: #1f6f78; }
+[data-m="0"]    { --m: #3a332d; --ink: #3a332d; --cell: #3a332d; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-m="4"]    { --m: #ef7b62; }
+  :root:not([data-theme="light"]) [data-m="2"]    { --m: #e38a6c; }
+  :root:not([data-theme="light"]) [data-m="0.5"]  { --m: #8cc4a3; }
+  :root:not([data-theme="light"]) [data-m="0.25"] { --m: #5fb7c0; }
+  :root:not([data-theme="light"]) [data-m="0"]    { --m: #cfc4b4; --cell: #5a5048; }
+  :root:not([data-theme="light"]) [data-m="1"]    { --cell: #5a5048; }
+}
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+  :root[data-theme="dark"] [data-m="4"]    { --m: #ef7b62; }
+  :root[data-theme="dark"] [data-m="2"]    { --m: #e38a6c; }
+  :root[data-theme="dark"] [data-m="0.5"]  { --m: #8cc4a3; }
+  :root[data-theme="dark"] [data-m="0.25"] { --m: #5fb7c0; }
+  :root[data-theme="dark"] [data-m="0"]    { --m: #cfc4b4; --cell: #5a5048; }
+  :root[data-theme="dark"] [data-m="1"]    { --cell: #5a5048; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stripes { opacity: .55; }
+}
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+  :root[data-theme="dark"] .stripes { opacity: .55; }
+
+@media (prefers-color-scheme: dark) and (max-width: 900px) {
+  :root:not([data-theme="light"]) .stripes { opacity: .22; }
+}
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+@media (max-width: 900px) { :root[data-theme="dark"] .stripes { opacity: .22; } }
+
+
+/* =====================================================================
+   Caselle dei tipi "medaglione + livrea" (H1) e moltiplicatori a pillola
+   tinta con anello (M4 + contorno M3). Sovrascrivono le regole precedenti.
+   ===================================================================== */
+
+/* --- Tipi: barra in tinta chiara, testo nel colore del tipo, filetto pieno in basso,
+       cerchio più grande che esce a sinistra --- */
+.tile, .badge {
+  background: color-mix(in oklab, var(--c) 22%, var(--surface));
+  color: color-mix(in oklab, var(--c) 56%, var(--text));
+  text-shadow: none;
+  border-radius: 999px;
+  box-shadow: inset 0 -3px 0 var(--c);
+}
+.tile .ico, .badge .ico {
+  background: color-mix(in oklab, var(--c) 90%, #7a5a40);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+.tile {
+  height: 34px; margin-left: 10px; padding: 0 8px 0 0; gap: 8px;
+  font-size: 15px; font-weight: 800; overflow: visible;
+}
+.tile .ico { width: 44px; height: 44px; margin-left: -10px; }
+.tile .val { top: 4px; right: 6px; height: 26px; min-width: 40px; font-size: 14px; border-radius: 999px; }
+.tile.set .name { padding-right: 44px; }
+.tile .fix { top: -12px; border-radius: 999px; }
+/* Dopo aver iniziato a rispondere, i tipi non toccati si fanno da parte */
+.grid.dim .tile:not(.set):not(.miss) { filter: none; opacity: .6; }
+.grid { gap: 12px 10px; margin-top: 18px; }
+@media (hover: hover) and (pointer: fine) {
+  .tile:not(.locked):hover { filter: none; background: color-mix(in oklab, var(--c) 32%, var(--surface)); }
+}
+
+/* Badge piccoli (tipi del Pokémon, selettori, soluzioni) */
+.badge {
+  height: 26px; margin-left: 7px; padding: 0 11px 0 0; gap: 6px;
+  font-size: 13.5px; box-shadow: inset 0 -2px 0 var(--c);
+}
+.badge .ico { width: 32px; height: 32px; margin-left: -7px; }
+.calc-block .badge .ico, .result .badge .ico { box-shadow: 0 0 0 2px var(--surface-2); }
+.result .badge .ico { box-shadow: 0 0 0 2px var(--surface); }
+.picker, .mon-types, .answer-row .list { gap: 8px 10px; }
+.badge.pick { opacity: .5; filter: none; }
+.badge.pick[aria-pressed="true"] { opacity: 1; outline: 2px solid var(--text); outline-offset: 3px; }
+
+@media (max-width: 560px) {
+  .tile { height: 32px; font-size: 14px; }
+  .tile .ico { width: 40px; height: 40px; }
+  .tile .val { top: 3px; }
+}
+
+/* --- Moltiplicatori: pillola tinta del proprio colore con anello; attiva = piena --- */
+.brush-row { gap: 8px; }
+.brush {
+  height: 38px; border-radius: 999px;
+  border: 2.5px solid var(--m);
+  background: color-mix(in oklab, var(--m) 14%, var(--surface));
+  color: var(--m);
+  font-size: 16px;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease, transform .12s ease;
+}
+.brush .dot { display: none; }
+.brush.on {
+  background: var(--m); color: var(--bg); border-color: var(--m);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4.5px var(--m);
+}
+@media (hover: hover) and (pointer: fine) {
+  .brush:not(.on):hover { background: color-mix(in oklab, var(--m) 24%, var(--surface)); }
+}
+@media (max-width: 560px) {
+  .brush { height: 36px; font-size: 15px; }
+}
+
+/* Esito della verifica: il contorno avvolge anche il medaglione */
+.tile { outline: none !important; }
+.tile::before {
+  content: ''; position: absolute; inset: -8px -5px -8px -15px;
+  border: 3px solid transparent; border-radius: 999px; pointer-events: none;
+}
+.tile:focus-visible::before { border-color: var(--text); }
+.tile.ok::before    { border-color: var(--ok); }
+.tile.bad::before   { border-color: var(--bad); }
+.tile.miss::before  { border-color: var(--warn); border-style: dashed; }
+.tile.extra::before { border-color: var(--bad); border-style: dashed; }
+.tile .fix { top: -16px; right: 8px; }
+.grid { gap: 16px 12px; }
+
+/* Tipi non toccati: smorzati senza trasparenza (lo sfondo non deve trasparire) */
+.grid.dim .tile:not(.set):not(.miss) {
+  opacity: 1;
+  background: color-mix(in oklab, var(--c) 9%, var(--surface));
+  color: color-mix(in oklab, var(--c) 30%, var(--muted));
+  box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--c) 45%, var(--surface));
+}
+.grid.dim .tile:not(.set):not(.miss) .ico { filter: saturate(.45) brightness(1.08); }
+
+/* Salta / Verifica a pillola: i filetti da livrea diventano anelli interni che seguono la curva */
+.btn { border-radius: 999px; height: 50px; }
+.btn.primary {
+  background-image: none;
+  box-shadow: inset 0 -4px 0 var(--teal), inset 0 -9px 0 var(--sage);
+  padding-bottom: 6px;
+}
+.btn.ghost { padding: 0 26px; }
+@media (max-width: 560px) { .btn { height: 46px; } }
+
+/* =====================================================================
+   Logo L1 e schede a pillola con medaglione (P3)
+   ===================================================================== */
+
+html, body { overflow-x: clip; } /* le piste del logo arrivano al bordo senza creare scroll */
+.logo { position: relative; --lw: 360px; }
+.logo svg { width: min(var(--lw), 100%); }
+.logo-word { font-size: 44px; stroke: var(--bg); stroke-width: 6px; paint-order: stroke; stroke-linejoin: round; }
+/* Le tre linee in alto proseguono fino al bordo destro della pagina */
+.logo::after {
+  content: ''; position: absolute; pointer-events: none;
+  left: calc(min(var(--lw), 100%) - 1px);
+  top: calc(var(--lw) * 5 / 420 - var(--lw) * 1.2 / 420);
+  width: 100vw;
+  height: calc(var(--lw) * 16.4 / 420);
+  --t: calc(var(--lw) * 2.4 / 420);
+  --g: calc(var(--lw) * 7 / 420);
+  background:
+    linear-gradient(var(--text), var(--text)) 0 0 / 100% var(--t) no-repeat,
+    linear-gradient(var(--text), var(--text)) 0 var(--g) / 100% var(--t) no-repeat,
+    linear-gradient(var(--text), var(--text)) 0 calc(var(--g) * 2) / 100% var(--t) no-repeat;
+}
+
+/* Schede: pillole separate, fondo pieno, medaglione colorato con icona */
+.tabs {
+  border: 0; border-radius: 0; overflow: visible; background: transparent;
+  gap: 10px 14px; padding-left: 16px; position: relative; z-index: 1;
+}
+.tabs button {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 14px 0 6px; border-radius: 999px;
+  border: 2px solid var(--text); background: var(--surface); color: var(--text);
+  font-size: 13.5px; font-weight: 800;
+}
+.tabs button + button { border-left: 2px solid var(--text); }
+.tabs button[aria-current="page"] { background: var(--text); color: var(--bg); }
+.tab-md {
+  flex: none; width: 38px; height: 38px; margin: -3px 0 -3px -18px; border-radius: 50%;
+  display: grid; place-items: center; color: #fbf8f2;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.tab-md svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+.tabs [data-mode="quiz"]     .tab-md { background: var(--rust); }
+.tabs [data-mode="home"]     .tab-md { background: #4f8a6a; }
+.tabs [data-mode="chart"]    .tab-md { background: var(--teal); }
+.tabs [data-mode="coverage"] .tab-md { background: #c98a1b; }
+@media (hover: hover) and (pointer: fine) {
+  .tabs button:not([aria-current="page"]):hover { background: var(--surface-2); }
+}
+
+@media (max-width: 560px) {
+  .logo { --lw: 320px; }
+  .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 22px; padding-left: 16px; }
+  .tabs button { font-size: 13px; height: 36px; }
+}
+/* Il logo ha una larghezza fissa (--lw), così le piste esterne combaciano al pixel */
+.logo { flex: 0 0 auto; width: var(--lw); max-width: 100%; }
+.logo svg { width: 100%; }
+.logo::after { left: calc(var(--lw) - 1px); }
+@media (max-width: 360px) { .logo { --lw: 280px; } }
+
+/* ---- Ritocchi: chip, box moltiplicatori, istruzioni, piste, selettori ---- */
+
+/* Il logo disegna da sé le piste fino al bordo: niente giunzione CSS */
+.logo::after { content: none; }
+
+/* 1. Il chip del valore è centrato nella parte chiara (sopra il filetto di 3 px) */
+.tile .val { height: 24px; top: calc((100% - 3px - 24px) / 2); }
+
+/* 2. Moltiplicatori dentro un box come quello del Pokémon */
+.brushes {
+  margin: 14px 0 0; padding: 10px;
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-lg);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.brushes + .grid { margin-top: 20px; }
+
+/* 3. Istruzioni sopra il box del Pokémon */
+.quiz-hint { margin: 0 4px 10px; }
+
+/* 6. Nessun bordo nero sul tipo selezionato in Tabella e Copertura */
+.badge.pick[aria-pressed="true"] { outline: none; }
+.badge.pick:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+/* Logo con circuito chiuso: viewBox 440 di larghezza */
+.logo { --lw: 377px; }
+@media (max-width: 560px) { .logo { --lw: 335px; } }
+@media (max-width: 360px) { .logo { --lw: 293px; } }
+
+/* =====================================================================
+   Logo simmetrico, strisce di sfondo come quelle del logo, box moltiplicatori
+   ===================================================================== */
+
+/* viewBox 412: stessa scala di prima (circa 0,857 px per unità) */
+.logo { --lw: 353px; }
+@media (max-width: 560px) { .logo { --lw: 314px; } }
+@media (max-width: 360px) { .logo { --lw: 274px; } }
+
+/* Strisce di sfondo: le stesse tre fasce del logo, stessa inclinazione (≈32°),
+   da un bordo all'altro dello schermo */
+.stripes {
+  position: fixed; z-index: 0; pointer-events: none;
+  top: 50vh; left: 74vw; right: auto; width: auto; height: 400vmax;
+  transform: translate(-50%, -50%) rotate(32deg);
+  display: flex; gap: 5px; opacity: 1;
+}
+.stripes i { display: block; flex: none; height: 100%; margin: 0; opacity: 1; }
+.stripes i:nth-child(1) { width: 46px; background: #8fb3a0; }
+.stripes i:nth-child(2) { width: 58px; background: #c8553d; }
+.stripes i:nth-child(3) { width: 24px; background: #1f6f78; }
+.stripes { opacity: .38; }
+@media (max-width: 900px) { .stripes { opacity: .26; left: 80vw; } }
+@media (max-width: 560px) { .stripes { opacity: .2; left: 86vw; } }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stripes { opacity: .3; }
+}
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+  :root[data-theme="dark"] .stripes { opacity: .3; }
+
+
+/* Box dei moltiplicatori: a pillola come i pulsanti, con le tre linee a sinistra
+   come il box del Pokémon (ombre interne: seguono la curva) */
+.brushes {
+  border-radius: 999px;
+  padding: 9px 10px 9px 20px;
+  box-shadow: inset 4px 0 0 var(--rust), inset 6.5px 0 0 var(--sage), inset 9px 0 0 var(--teal);
+}
+
+
+/* Salta: fondo pieno, non trasparente */
+.btn.ghost { background: var(--surface); }
+
+/* Logo: solo il contorno chiuso, larghezza naturale */
+.logo { overflow: visible; }
+
+/* ---------- Adesivi decorativi ---------- */
+/* (Gli adesivi sono fissi e generati da stickers.js: vedi la sezione più sotto) */
+
+/* Revisione: nomi lunghi nel quiz e schede su schermi molto stretti */
+.mon-info h2 { overflow-wrap: anywhere; font-size: clamp(20px, 6vw, 28px); }
+.tabs { flex-wrap: wrap; }
+@media (max-width: 360px) {
+  .tabs { gap: 10px 18px; }
+  .tabs button { font-size: 12px; padding-right: 10px; gap: 6px; }
+  .tab-md { width: 34px; height: 34px; margin-left: -16px; }
+}
+
+/* =====================================================================
+   Linee della livrea: tre strisce uguali (3 px) a sinistra e a destra
+   ===================================================================== */
+.mon::before { content: none; }
+.mon, .brushes {
+  box-shadow:
+    inset 3px 0 0 var(--rust), inset 6px 0 0 var(--sage), inset 9px 0 0 var(--teal),
+    inset -3px 0 0 var(--rust), inset -6px 0 0 var(--sage), inset -9px 0 0 var(--teal);
+}
+.mon { padding-left: 26px; padding-right: 26px; }
+.brushes { padding-left: 18px; padding-right: 18px; }
+@media (max-width: 560px) { .mon { padding-left: 22px; padding-right: 22px; } }
+.mon-side { border-left-color: color-mix(in srgb, var(--text) 25%, transparent); }
+.mon-flavor { font-variation-settings: "wdth" 100; }
+
+/* =====================================================================
+   Pulsante Verifica: medaglione con icona, contorno d'inchiostro, filetti
+   ===================================================================== */
+.btn.primary {
+  position: relative; border: 2px solid var(--text);
+  padding: 0 22px 4px 58px;
+  box-shadow: inset 0 -4px 0 var(--teal), inset 0 -8px 0 var(--sage);
+  letter-spacing: .06em; text-transform: uppercase; font-size: 16px;
+  transition: transform .12s ease, filter .15s ease, background-color .2s ease;
+}
+.btn.primary::before {
+  content: ''; position: absolute; left: 6px; top: 50%; width: 36px; height: 36px; margin-top: -20px;
+  border-radius: 50%; background: var(--text) center / 20px no-repeat;
+  box-shadow: 0 0 0 2px #fbf8f2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbf8f2' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+.btn.primary[data-state="next"] { background-color: var(--teal); box-shadow: inset 0 -4px 0 var(--rust), inset 0 -8px 0 var(--sage); }
+.btn.primary[data-state="next"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbf8f2' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h13M13 6l6 6-6 6'/%3E%3C/svg%3E");
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn.primary:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.05); }
+}
+.btn.primary:active { transform: translateY(1px) scale(.99); }
+
+/* =====================================================================
+   Icone categoria tonde e tabella mosse
+   ===================================================================== */
+.cls-ico svg { width: 22px; height: 22px; }
+.move-name { gap: 10px; }
+
+/* =====================================================================
+   Tabella (difesa / attacco) e Pokédex in stile '70
+   ===================================================================== */
+.calc-row .lbl { border-radius: 999px; font-variation-settings: "wdth" 125; }
+.calc-stats span { border-radius: 999px; font-variation-settings: "wdth" 110; }
+.calc-stats b { font-variation-settings: "wdth" 125; }
+.calc-row .word { font-variation-settings: "wdth" 112; }
+
+.dex-search { border: 2px solid var(--text); font-variation-settings: "wdth" 105; }
+.dex-gen { border: 2px solid var(--text); font-variation-settings: "wdth" 110; }
+.dex-card { border-radius: var(--r-lg); }
+.dex-card .dex-name { font-variation-settings: "wdth" 115; }
+.dex-num { color: var(--rust); letter-spacing: .06em; font-variation-settings: "wdth" 125; }
+.dex-head, .dex-sec { border-radius: var(--r-lg); box-shadow: none; }
+.dex-head {
+  box-shadow:
+    inset 3px 0 0 var(--rust), inset 6px 0 0 var(--sage), inset 9px 0 0 var(--teal),
+    inset -3px 0 0 var(--rust), inset -6px 0 0 var(--sage), inset -9px 0 0 var(--teal);
+  padding-left: 26px; padding-right: 26px;
+}
+.dex-title h2 { font-variation-settings: "wdth" 125; letter-spacing: -.02em; }
+.dex-sec h3 { font-variation-settings: "wdth" 125; }
+.dex-art { position: relative; }
+/* Il bordo da adesivo dell'artwork è disegnato da pokedex.js (stickerCanvas) */
+:root { --dex-sticker: 1; }
+.stat-bar { height: 14px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 18%, transparent); }
+.stat-bar i[data-tone="low"]  { background: var(--rust); }
+.stat-bar i[data-tone="mid"]  { background: #c98a1b; }
+.stat-bar i[data-tone="good"] { background: var(--sage); }
+.stat-bar i[data-tone="high"] { background: #4f8a6a; }
+.stat-bar i[data-tone="top"]  { background: var(--teal); }
+.stat-row b, .dex-move-table .lv { font-variation-settings: "wdth" 125; }
+.evo-mon { border-radius: var(--r-lg); border-width: 2px; }
+.dex-move-controls select { border: 2px solid var(--text); background: var(--surface); font-variation-settings: "wdth" 110; }
+.tabs { row-gap: 12px; }
+.tabs [data-mode="dex"] .tab-md { background: #8a4f7d; }
+
+/* Pokédex in stile '70: fondo bicolore con le fasce della livrea, badge a medaglione */
+.dex-card { border: 2px solid color-mix(in srgb, var(--text) 16%, transparent); border-radius: var(--r-lg); }
+.dex-stage {
+  background:
+    linear-gradient(120deg, transparent 0 66%, color-mix(in oklab, #8fb3a0 55%, transparent) 66% 71%,
+      color-mix(in oklab, #c8553d 55%, transparent) 71% 79%, color-mix(in oklab, #1f6f78 55%, transparent) 79% 82%, transparent 82%),
+    linear-gradient(120deg,
+      color-mix(in oklab, var(--c) 30%, var(--surface)) 0 50%,
+      color-mix(in oklab, var(--c2) 30%, var(--surface)) 50% 100%);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--text) 14%, transparent);
+}
+.dex-num { color: var(--rust); letter-spacing: .04em; font-variation-settings: "wdth" 125; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 18%, transparent); }
+.dex-name { font-variation-settings: "wdth" 118; letter-spacing: -.01em; }
+.dex-region { font-variation-settings: "wdth" 125; border-bottom-color: color-mix(in srgb, var(--text) 22%, transparent); }
+.dex-region span { position: relative; padding-left: 16px; }
+.dex-region span::before {
+  content: ''; position: absolute; left: 0; top: 50%; width: 9px; height: 18px; margin-top: -9px;
+  background: linear-gradient(90deg, var(--rust) 0 33%, var(--sage) 33% 66%, var(--teal) 66%);
+  border-radius: 2px;
+}
+.dex-reset { border: 2px solid var(--text); font-variation-settings: "wdth" 110; }
+.badge.mini { height: 22px; margin-left: 7px; padding-right: 9px; font-size: 12px; box-shadow: inset 0 -2px 0 var(--c); }
+.badge.mini .ico { width: 28px; height: 28px; margin-left: -8px; }
+.dex-card .badge.mini .ico { box-shadow: 0 0 0 2px var(--surface); }
+@media (hover: hover) and (pointer: fine) {
+  .dex-card:hover { border-color: var(--text); box-shadow: 4px 4px 0 var(--text); transform: translate(-2px, -2px); }
+}
+.dex-card:active { transform: translate(1px, 1px); box-shadow: none; }
+.dex-list { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+.badge.mini { height: 22px; margin-left: 6px; padding: 0 9px 0 0; gap: 5px; font-size: 12px; }
+.badge.mini .ico { width: 24px; height: 24px; margin-left: -6px; }
+.dex-types { gap: 6px 8px; }
+@media (max-width: 560px) { .dex-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Torna in cima: medaglione d'inchiostro con anello tricolore */
+.to-top {
+  width: 50px; height: 50px; border: 2px solid var(--text); background: var(--text); color: var(--bg);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--rust), 0 0 0 7px var(--sage), 0 0 0 9px var(--teal);
+}
+@media (hover: hover) and (pointer: fine) { .to-top.show:hover { transform: translateY(-2px); } }
+
+/* =====================================================================
+   Prestazioni: niente filtri costosi sugli adesivi (il bordo è disegnato da stickers.js
+   o è parte dell'SVG) e grana della carta nello sfondo invece che in un velo sopra la pagina
+   ===================================================================== */
+.stk, .stk-f { filter: none; }
+body::after { content: none; }
+body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .13 0 0 0 0 .11 0 0 0 0 .09 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .95 0 0 0 0 .9 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+  :root[data-theme="dark"] body {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .95 0 0 0 0 .9 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+.stripes { will-change: transform; }
+
+/* =====================================================================
+   Adesivi fissi sullo sfondo (stesso livello delle strisce), nei margini laterali
+   ===================================================================== */
+.stickers {
+  display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  --m: max(0px, calc((100vw - 900px) / 2));
+}
+.stickers .stk {
+  position: absolute; width: var(--w); height: auto; top: calc(var(--y) * 1vh);
+  opacity: .5; filter: none; will-change: transform;
+}
+.stickers .stk-l { left: calc(var(--m) * var(--fx)); right: auto; transform: translate(-50%, -50%) rotate(var(--rot)); }
+.stickers .stk-r { right: calc(var(--m) * var(--fx)); left: auto; transform: translate(50%, -50%) rotate(var(--rot)); }
+.stickers .stk svg, .stickers .stk canvas { display: block; width: 100%; height: auto; overflow: visible; }
+.stickers .syl { font-family: "Euphemia UCAS", "Noto Sans Canadian Aboriginal", sans-serif; }
+.stickers .stk[data-extra] { display: none; }
+@media (min-width: 1640px) { .stickers .stk[data-extra] { display: block; } }
+@media (max-height: 760px) { .stickers .stk[data-low] { display: none; } }
+@media (max-width: 1180px) { .stickers { display: none; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .stickers .stk { opacity: .34; } }
+/* DARK-MANUAL: stesso tema scuro quando è scelto a mano */
+ :root[data-theme="dark"] .stickers .stk { opacity: .34; } 
+
+
+/* Polaroid */
+.stk-polaroid { position: relative; padding: 9px 9px 34px; background: #fbf8f2; box-shadow: 0 0 0 1.4px #221d19, 2px 3px 0 1.4px rgba(60,40,20,.18); }
+.stk-polaroid .ph { aspect-ratio: 1; background: linear-gradient(160deg, #f2d6dc, #cfe2da); display: grid; place-items: center; }
+.stk-polaroid img { width: 90%; }
+.stk-polaroid .cap { position: absolute; left: 0; right: 0; bottom: 9px; text-align: center; font: italic 700 15px/1 Archivo, sans-serif; color: #2f5f9a; transform: rotate(-2deg); }
+.stk-polaroid .tape { position: absolute; top: -8px; left: 34%; width: 34%; height: 16px; background: rgba(224,177,30,.55); transform: rotate(-4deg); }
+/* Olografico */
+.stk-holo { position: relative; aspect-ratio: 1; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  background: conic-gradient(from 20deg, #f2c9a8, #d8e6c6, #c9dcef, #efc9e4, #f2c9a8);
+  box-shadow: 0 0 0 3px #fbf8f2, 0 0 0 4.4px #221d19, 2px 3px 0 4.4px rgba(60,40,20,.18); }
+.stk-holo img { width: 86%; position: relative; z-index: 1; }
+.stk-holo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255,120,200,.32) 44%, rgba(120,220,255,.36) 50%, rgba(255,240,120,.32) 56%, transparent 65%); mix-blend-mode: screen; }
+/* Spilla smaltata */
+.stk-pin { position: relative; aspect-ratio: 1; }
+.stk-pin .ring { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(145deg, #f3d27a, #b98a1c 60%, #f0cf6e); box-shadow: 2px 3px 0 rgba(60,40,20,.22); }
+.stk-pin .enamel { position: absolute; inset: 5%; border-radius: 50%; background: #4d9636; box-shadow: inset 0 0 0 3px #e7c55b; }
+.stk-pin .face { position: absolute; inset: 12%; border-radius: 50%; background: #fbf8f2; box-shadow: inset 0 0 0 2px #b98a1c; overflow: hidden; display: grid; place-items: center; }
+.stk-pin .face img { width: 88%; }
+.stk-pin .shine { position: absolute; top: 8%; left: 20%; width: 24%; height: 9%; border-radius: 50%; background: rgba(255,255,255,.55); transform: rotate(-30deg); }
+
+/* Verifica senza spunta (resta la freccia su "Prossimo") */
+.btn.primary[data-state="check"]::before { content: none; }
+.btn.primary[data-state="check"] { padding-left: 22px; }
+/* Strisce di sfondo: livello più piccolo, stessa resa */
+.stripes { height: 240vmax; }
+.dex-gender .hist-btn { border-width: 2px; }
+
+/* Pulsante tema: medaglione d'inchiostro con anello tricolore, come "torna su" */
+.theme-toggle {
+  top: 26px; right: 20px; width: 44px; height: 44px;
+  border: 2px solid var(--text); background: var(--text); color: var(--bg);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--rust), 0 0 0 7px var(--sage), 0 0 0 9px var(--teal);
+}
+@media (hover: hover) and (pointer: fine) { .theme-toggle:hover { transform: scale(1.08); } }
+@media (max-width: 560px) { .theme-toggle { top: 20px; right: 16px; } }
+
+/* Simbolo del sito a sinistra del circuito del logo */
+.logo { display: flex; align-items: center; gap: 12px; width: auto; }
+.logo svg { width: var(--lw); max-width: none; flex: none; }
+.logo .brand-mark { width: 72px; height: 72px; }
+@media (max-width: 560px) { .logo .brand-mark { width: 52px; height: 52px; } .logo { gap: 8px; --lw: min(314px, calc(100vw - 148px)); } }
+@media (max-width: 380px) { .logo .brand-mark { width: 40px; height: 40px; } .logo { gap: 6px; --lw: calc(100vw - 132px); } }
+
+/* Logo "libro da corsa" inline (animato da theme.js): stessa altezza del vecchio simbolo,
+   larghezza in proporzione (114 × 128, solo il libro); può sporgere mentre si apre */
+.logo svg.brand-book { width: 64px; height: 72px; max-width: none; flex: none; overflow: visible; }
+@media (max-width: 560px) { .logo svg.brand-book { width: 46px; height: 52px; } .logo { --lw: min(314px, calc(100vw - 142px)); } }
+@media (max-width: 380px) { .logo svg.brand-book { width: 36px; height: 40px; } .logo { --lw: calc(100vw - 128px); } }
+
+/* Adesivo "toppa ricamata": cerchio di stoffa con cucitura tratteggiata */
+.stickers .stk-patch { position: relative; aspect-ratio: 1; border-radius: 50%; background: #c8553d; overflow: hidden;
+  box-shadow: 0 0 0 3px #fbf8f2, 0 0 0 6px #221d19, 3px 5px 0 6px rgba(60, 40, 20, .18); }
+.stickers .stk-patch::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; border: 2.5px dashed #e0b11e; }
+.stickers .stk-patch img { position: absolute; left: 12%; top: 14%; width: 76%; }
+
+/* Home in stile '70: riquadri con il bordo d'inchiostro e la fascia del colore della sezione */
+.home-tile { border: 2px solid var(--text); box-shadow: inset 0 6px 0 var(--c); font-variation-settings: "wdth" 110; }
+.home-tile strong { font-family: var(--font-display); font-weight: 400; font-size: 18px; }
+@media (hover: hover) and (pointer: fine) { .home-tile:hover { border-color: var(--text); box-shadow: inset 0 6px 0 var(--c), 4px 4px 0 var(--text); transform: translate(-2px, -2px); } }
+.home-name { font-variation-settings: "wdth" 118; letter-spacing: -.01em; }
+.home-kicker { color: var(--rust); font-variation-settings: "wdth" 125; }
+.home-art { background: color-mix(in srgb, var(--text) 7%, var(--surface)); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 16%, transparent); }
+.home-search input, .home-answer { border-color: var(--text); }
+/* Pulsante Cerca della Home: lente al posto della spunta */
+.home-search .btn.primary::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbf8f2' stroke-width='3' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6'/%3E%3Cpath d='M15 15l5 5'/%3E%3C/svg%3E");
+}
+@media (max-width: 560px) { .home-search .btn.primary { padding: 0 14px 4px 50px; font-size: 14px; } }
+
+/* Pagina unica: nello stile '70 il nome resta solo per i lettori di schermo (si legge nel logo "da corsa") */
+.logo .brand-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Pulsante dello stile accanto al medaglione del tema; su telefono sotto di esso */
+.top { padding-right: 72px; }
+.style-toggle { right: 94px; }
+.style-toggle svg { stroke-width: 3.2; }
+@media (min-width: 561px) { .top { padding-right: 120px; } }
+@media (max-width: 560px) { .style-toggle { top: 84px; right: 16px; } }
+
+/* Spazio tra libro e scritta: il libro aperto (che scivola un po' a destra) non tocca l'anello della scritta */
+@media (min-width: 561px) { .logo { gap: 26px; } }
+@media (max-width: 560px) { .logo { gap: 16px; --lw: min(314px, calc(100vw - 150px)); } }
+@media (max-width: 380px) { .logo { gap: 14px; --lw: calc(100vw - 136px); } }
+
+/* Adesivo olografico del cromatico: l'ombra piatta c'è solo nello stile '70 */
+.holo-shadow { display: block; }
+
+/* Ricerca della Home: suggerimenti a pillola col bordo d'inchiostro, quello mostrato pieno */
+.home-hit { border-color: var(--text); font-variation-settings: "wdth" 110; }
+.home-hit[aria-selected="true"] { background: var(--text); color: var(--bg); }
+.home-hit[aria-selected="true"] .home-hit-num { color: inherit; opacity: .7; }
+.home-lens { stroke: var(--text); }
+
+/* Più respiro: schede della testata più distanziate */
+:root .tabs { gap: 14px 22px; padding-left: 18px; }
+/* Telefoni e finestre strette: medaglioni di tema e stile affiancati in alto a destra, logo al centro sotto */
+@media (max-width: 820px) {
+  :root .top { padding-top: 98px; }
+  .theme-toggle { top: 24px; right: 20px; }
+  .style-toggle { top: 24px; right: 92px; }
+}
+@media (max-width: 560px) { .logo { --lw: min(314px, calc(100vw - 104px)); } }
+@media (max-width: 380px) { .logo { --lw: calc(100vw - 96px); } }
+
+/* Verso, Cromatico e carte nello stile '70: bordi d'inchiostro */
+.cry-btn, .cry-alt, .shiny-toggle { border-color: var(--text); font-variation-settings: "wdth" 110; }
+.cry-btn { background: var(--text); color: var(--bg); }
+.shiny-toggle[aria-pressed="true"] { border-color: var(--text); box-shadow: 2px 2px 0 var(--text); }
+.tcg-view { border: 2px solid var(--text); box-shadow: 6px 6px 0 var(--text); }
+.tcg-info h3 { font-variation-settings: "wdth" 118; }
+
+/* Abilità e Oggetti nello stile '70: riquadri col bordo d'inchiostro; quello aperto con l'ombra piena */
+.cmp-card { border-color: var(--text); }
+.cmp-card strong { font-variation-settings: "wdth" 118; letter-spacing: -.01em; }
+.cmp-body h3 { font-variation-settings: "wdth" 118; }
+@media (hover: hover) and (pointer: fine) { .cmp-card:not(.open):hover { box-shadow: 3px 3px 0 var(--text); } }
+
+/* Coerenza nello stile '70: riquadri cliccabili col bordo d'inchiostro; al passaggio si sollevano con
+   l'ombra piena (la stessa ovunque). Le tre linee colorate solo dove il protagonista è un Pokémon:
+   quiz, scheda del Pokédex e Pokémon del giorno (non sulla barra dei moltiplicatori). */
+:root { --card-bd: 2px solid var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  :root .dex-card:hover, :root .evo-mon:hover, :root .cmp-card:not(.open):hover, :root .home-answer:not(:disabled):hover {
+    transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--text);
+  }
+  :root .home-tile:hover { transform: translate(-2px, -2px); box-shadow: inset 0 6px 0 var(--c), 4px 4px 0 var(--text); }
+}
+:root .evo-mon.current { box-shadow: inset 0 0 0 2px var(--text); }
+:root .brushes { box-shadow: none; padding-left: 10px; }
+:root .home-hero {
+  box-shadow:
+    inset 3px 0 0 var(--rust), inset 6px 0 0 var(--sage), inset 9px 0 0 var(--teal),
+    inset -3px 0 0 var(--rust), inset -6px 0 0 var(--sage), inset -9px 0 0 var(--teal);
+}
+:root .fx, :root .hist-btn { border-radius: 999px; }
+:root .hist-btn { border-width: 2px; }
+:root .home-tile strong, :root .cmp-card strong, :root .cmp-body h3 { font-variation-settings: "wdth" 118; letter-spacing: -.01em; }
+
+/* Scheda grande di Abilità e Oggetti: ombra piena d'inchiostro come gli altri riquadri sollevati */
+:root .cmp-card.zoom-card, :root .cmp-card.zoom-card:hover { box-shadow: 6px 6px 0 var(--text); }
+
+/* Regioni nello stile '70: medaglione blu della scheda, riquadri col bordo d'inchiostro */
+.tabs [data-mode="regions"] .tab-md { background: #2f5f9a; }
+@media (hover: hover) and (pointer: fine) { :root .reg-card:hover { transform: translate(-2px, -2px); box-shadow: inset 0 6px 0 var(--c), 4px 4px 0 var(--text); } }
+.reg-txt strong, .reg-gym-info strong, .reg-city-txt h4, .reg-title, .reg-h { font-variation-settings: "wdth" 118; letter-spacing: -.01em; }
+.reg-cover, .reg-map { border: 2px solid var(--text); box-shadow: 6px 6px 0 var(--text); }
+.reg-place, .reg-gym { box-shadow: 4px 4px 0 var(--text); }
+
+/* Carta del GCC: senza riquadro anche nello stile '70 */
+:root .tcg-view { border: 0; box-shadow: none; }
+
+/* Scheda del Pokémon senza riquadri anche nello stile '70 (niente tre linee ai lati)
+   — la scheda appoggia direttamente sulla carta */
+:root .dex-detail > .dex-head { box-shadow: none; padding-left: 0; padding-right: 0; }

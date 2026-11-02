@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs><clipPath id="cv"><rect x="12" y="4" width="43" height="44" rx="4"/></clipPath></defs>
+  <!-- alone crema: resta leggibile anche sulle barre scure -->
+  <rect x="8.5" y=".5" width="50" height="63" rx="7" fill="#fbf8f2"/>
+  <!-- blocco delle pagine -->
+  <path d="M17 42 H55 V59 H17 a5 5 0 0 1 -5 -5 V47 a5 5 0 0 1 5 -5 Z" fill="#fbf8f2" stroke="#221d19" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M19 53 H51" stroke="#221d19" stroke-width="1.8" stroke-linecap="round" opacity=".4"/>
+  <!-- copertina teal con la livrea -->
+  <g clip-path="url(#cv)">
+    <rect x="12" y="4" width="43" height="44" fill="#1f6f78"/>
+    <polygon points="14,48 21,48 48.5,4 41.5,4" fill="#8fb3a0"/>
+    <polygon points="24,48 32,48 59.5,4 51.5,4" fill="#c8553d"/>
+  </g>
+  <rect x="12" y="4" width="43" height="44" rx="4" fill="none" stroke="#221d19" stroke-width="3.5"/>
+  <path d="M19.5 4 V48" stroke="#221d19" stroke-width="2.5"/>
+  <!-- fermaglio a Poké Ball -->
+  <rect x="40" y="19" width="19" height="12" rx="3" fill="#221d19"/>
+  <circle cx="46" cy="25" r="6" fill="#fbf8f2" stroke="#221d19" stroke-width="2.6"/>
+  <path d="M40 25 H52" stroke="#221d19" stroke-width="2"/>
+  <circle cx="46" cy="25" r="2.2" fill="#fbf8f2" stroke="#221d19" stroke-width="1.6"/>
+</svg>
