@@ -19,9 +19,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Figtree:ital,wght@0,400..900;1,400..700&family=Varela+Round&family=Audiowide&family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=essenziale-96">
-  <link rel="stylesheet" href="theme-70s.css?v=essenziale-96" id="style-70s">
-  <link rel="stylesheet" href="essenziale.css?v=essenziale-96">
+  <link rel="stylesheet" href="styles.css?v=essenziale-100">
+  <link rel="stylesheet" href="theme-70s.css?v=essenziale-100" id="style-70s">
+  <link rel="stylesheet" href="essenziale.css?v=essenziale-100">
 </head>
 <body>
   <div class="stripes" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -42,17 +42,25 @@
         <defs>
           <clipPath id="logo-inner"><path d="M372 19 H40 A21 21 0 0 0 19 40 V66 A21 21 0 0 0 40 87 H372 A21 21 0 0 0 393 66 V40 A21 21 0 0 0 372 19 Z"/></clipPath>
         </defs>
-        <!-- Fasce della livrea, dentro la pista più interna -->
+        <!-- Fasce della livrea, dentro la pista più interna (nel sistema inclinato: a riposo identiche ai poligoni originali, in hover si espandono su tutta la pista) -->
         <g clip-path="url(#logo-inner)">
-          <polygon class="lv lv-1" points="242,106 280,106 346,0 308,0" fill="#8fb3a0"/>
-          <polygon class="lv lv-2" points="284,106 332,106 398,0 350,0" fill="#c8553d"/>
-          <polygon class="lv lv-3" points="336,106 356,106 422,0 402,0" fill="#1f6f78"/>
+          <g transform="matrix(1 0 -0.6226415 1 0 0)">
+            <rect class="lv lv-1" x="308" y="0" width="38" height="106" fill="#8fb3a0"/>
+            <rect class="lv lv-2" x="350" y="0" width="48" height="106" fill="#c8553d"/>
+            <rect class="lv lv-3" x="402" y="0" width="20" height="106" fill="#1f6f78"/>
+          </g>
         </g>
         <!-- Circuito chiuso: tre piste che avvolgono la scritta, curve uguali a sinistra e a destra -->
         <g class="logo-track" fill="none" stroke-width="2.4" stroke-linecap="round">
-          <path d="M372 5 H40 A35 35 0 0 0 5 40 V66 A35 35 0 0 0 40 101 H372 A35 35 0 0 0 407 66 V40 A35 35 0 0 0 372 5"/>
-          <path d="M372 12 H40 A28 28 0 0 0 12 40 V66 A28 28 0 0 0 40 94 H372 A28 28 0 0 0 400 66 V40 A28 28 0 0 0 372 12"/>
-          <path d="M372 19 H40 A21 21 0 0 0 19 40 V66 A21 21 0 0 0 40 87 H372 A21 21 0 0 0 393 66 V40 A21 21 0 0 0 372 19"/>
+          <path pathLength="1000" d="M372 5 H40 A35 35 0 0 0 5 40 V66 A35 35 0 0 0 40 101 H372 A35 35 0 0 0 407 66 V40 A35 35 0 0 0 372 5"/>
+          <path pathLength="1000" d="M372 12 H40 A28 28 0 0 0 12 40 V66 A28 28 0 0 0 40 94 H372 A28 28 0 0 0 400 66 V40 A28 28 0 0 0 372 12"/>
+          <path pathLength="1000" d="M372 19 H40 A21 21 0 0 0 19 40 V66 A21 21 0 0 0 40 87 H372 A21 21 0 0 0 393 66 V40 A21 21 0 0 0 372 19"/>
+        </g>
+        <!-- Scie tricolori in corsa lungo le tre corsie del circuito (Proposta 2) -->
+        <g class="logo-beams" fill="none">
+          <path class="race-beam beam-1" pathLength="1000" d="M372 5 H40 A35 35 0 0 0 5 40 V66 A35 35 0 0 0 40 101 H372 A35 35 0 0 0 407 66 V40 A35 35 0 0 0 372 5"/>
+          <path class="race-beam beam-2" pathLength="1000" d="M372 12 H40 A28 28 0 0 0 12 40 V66 A28 28 0 0 0 40 94 H372 A28 28 0 0 0 400 66 V40 A28 28 0 0 0 372 12"/>
+          <path class="race-beam beam-3" pathLength="1000" d="M372 19 H40 A21 21 0 0 0 19 40 V66 A21 21 0 0 0 40 87 H372 A21 21 0 0 0 393 66 V40 A21 21 0 0 0 372 19"/>
         </g>
         <text class="logo-word" x="40" y="72" textLength="320" lengthAdjust="spacingAndGlyphs">POKÉNCARTA</text>
       </svg>
@@ -202,18 +210,18 @@
 
   <button type="button" class="to-top" id="to-top" aria-label="Torna in cima"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6"/></svg></button>
 
-  <script src="types.js?v=essenziale-96"></script>
+  <script src="types.js?v=essenziale-100"></script>
   <!-- GSAP + Flip (versione fissa): animano i filtri del Pokédex e i risultati del calcolatore della Tabella. Se la CDN non risponde il sito funziona uguale, senza animazione. -->
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/Flip.min.js"></script>
-  <script src="app.js?v=essenziale-96"></script>
-  <script src="paesaggi.js?v=essenziale-96"></script>
-  <script src="pokedex.js?v=essenziale-96"></script>
-  <script src="compendio.js?v=essenziale-96"></script>
-  <script src="regioni-dati.js?v=essenziale-96"></script>
-  <script src="regioni-immagini.js?v=essenziale-96"></script>
-  <script src="regioni.js?v=essenziale-96"></script>
-  <script src="stickers.js?v=essenziale-96"></script>
-  <script src="comparse.js?v=essenziale-96"></script>
+  <script src="app.js?v=essenziale-100"></script>
+  <script src="paesaggi.js?v=essenziale-100"></script>
+  <script src="pokedex.js?v=essenziale-100"></script>
+  <script src="compendio.js?v=essenziale-100"></script>
+  <script src="regioni-dati.js?v=essenziale-100"></script>
+  <script src="regioni-immagini.js?v=essenziale-100"></script>
+  <script src="regioni.js?v=essenziale-100"></script>
+  <script src="stickers.js?v=essenziale-100"></script>
+  <script src="comparse.js?v=essenziale-100"></script>
 </body>
 </html>

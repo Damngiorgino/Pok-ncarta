@@ -899,3 +899,101 @@ body { font-weight: 400; }
 :root .matrix-tip[data-m="4"], :root .matrix-tip[data-m="2"] { --m: #c8553d; }
 :root .matrix-tip[data-m="0.5"], :root .matrix-tip[data-m="0.25"] { --m: #4f8a6c; }
 :root .matrix-tip[data-m="0"] { --m: #776d62; }
+
+/* ---------- Animazione Hover sul Titolo (Proposta 2 + 6 Sistemata):
+   niente ingrandimento statico; le 3 strisce originali si espandono a vestire tutta la pista
+   e si riavvolgono al punto esatto all'uscita, mentre 3 scie tricolori corrono sulle corsie ---------- */
+:root .logo-link:hover { transform: none !important; }
+:root .logo-race .lv {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  transition: transform .46s cubic-bezier(.22, 1, .36, 1);
+  will-change: transform;
+}
+:root .logo-race .logo-word {
+  paint-order: stroke fill;
+  stroke: #221d19;
+  stroke-width: 0px;
+  stroke-linejoin: round;
+  transition: fill .44s cubic-bezier(.22, 1, .36, 1), stroke-width .44s cubic-bezier(.22, 1, .36, 1);
+}
+:root .logo-race .race-beam {
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity .28s ease;
+}
+:root .logo-race .beam-1 { stroke: var(--lv1); stroke-width: 4.2; stroke-dasharray: 150 850; stroke-dashoffset: 1000; }
+:root .logo-race .beam-2 { stroke: var(--lv2); stroke-width: 4.6; stroke-dasharray: 190 810; stroke-dashoffset: 1000; }
+:root .logo-race .beam-3 { stroke: var(--lv3); stroke-width: 4.2; stroke-dasharray: 130 870; stroke-dashoffset: 1000; }
+@keyframes logo-lap-ccw { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+@keyframes logo-lap-cw  { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 1000; } }
+@media (hover: hover) and (pointer: fine) {
+  :root .logo-link:hover .lv-1 { transform: translateX(-284px) scaleX(3.74); }
+  :root .logo-link:hover .lv-2 { transform: translateX(-178px) scaleX(2.92); }
+  :root .logo-link:hover .lv-3 { transform: translateX(-84px) scaleX(6.80); }
+  :root .logo-link:hover .logo-word { fill: #fbf8f2; stroke-width: 5.5px; }
+  :root .logo-link:hover .race-beam { opacity: 1; }
+  :root .logo-link:hover .beam-1 { animation: logo-lap-ccw 1.15s linear infinite; }
+  :root .logo-link:hover .beam-2 { animation: logo-lap-ccw .92s linear infinite; }
+  :root .logo-link:hover .beam-3 { animation: logo-lap-cw 1.25s linear infinite; }
+}
+
+/* ---------- Transizione "Zoommata e Discesa tra le Nuvole" quando si clicca una Regione (regioni.js) ---------- */
+.reg-cloud-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+}
+.reg-cloud-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+.reg-cloud-veil {
+  position: absolute;
+  inset: -10%;
+  background: radial-gradient(circle at 50% 50%,
+    rgba(252, 249, 243, 0.98) 0%,
+    rgba(246, 241, 231, 0.94) 48%,
+    rgba(243, 237, 226, 0.78) 100%);
+  opacity: 0;
+  will-change: opacity, transform;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .reg-cloud-veil {
+    background: radial-gradient(circle at 50% 50%,
+      rgba(42, 38, 34, 0.97) 0%,
+      rgba(31, 27, 24, 0.93) 50%,
+      rgba(24, 20, 18, 0.80) 100%);
+  }
+}
+:root[data-theme="dark"] .reg-cloud-veil {
+  background: radial-gradient(circle at 50% 50%,
+    rgba(42, 38, 34, 0.97) 0%,
+    rgba(31, 27, 24, 0.93) 50%,
+    rgba(24, 20, 18, 0.80) 100%);
+}
+.reg-cloud-bank {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(420px, 52vw, 760px);
+  height: auto;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.reg-cloud-bank svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 8px 0 rgba(34, 29, 25, 0.10));
+}
+.reg-cloud-bank .c-main {
+  stroke: rgba(34, 29, 25, 0.22);
+  stroke-width: 3px;
+}

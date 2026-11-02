@@ -102,6 +102,126 @@ function cartridge(id) {
   return `<svg class="reg-cart" viewBox="0 0 64 72" aria-hidden="true"><path d="M8 4h40l8 8v56H8z" class="cart-body"/><path d="M14 4v8M20 4v8M26 4v8" class="cart-ridge"/>${stripes}<rect x="12" y="20" width="40" height="30" class="cart-frame"/><path d="M16 60h32" class="cart-ridge"/></svg>`;
 }
 
+// Overlay riutilizzabile per la transizione "Zoommata e Discesa tra le Nuvole" quando si clicca una regione
+let regCloudStage = null;
+let regDiving = false;
+const REG_CLOUD_DIRS = [
+  { sx: -6,  sy: -5,  ex: -62, ey: -46, s0: 0.55, sMid: 1.25, sEnd: 2.05, rot: -4 },
+  { sx:  6,  sy: -5,  ex:  62, ey: -46, s0: 0.55, sMid: 1.25, sEnd: 2.05, rot:  5 },
+  { sx: -7,  sy:  5,  ex: -64, ey:  48, s0: 0.55, sMid: 1.28, sEnd: 2.10, rot:  3 },
+  { sx:  7,  sy:  5,  ex:  64, ey:  48, s0: 0.55, sMid: 1.28, sEnd: 2.10, rot: -5 },
+  { sx:  0,  sy: -8,  ex:   0, ey: -64, s0: 0.50, sMid: 1.20, sEnd: 1.95, rot:  0 },
+  { sx:  0,  sy:  8,  ex:   0, ey:  64, s0: 0.50, sMid: 1.20, sEnd: 1.95, rot:  2 },
+  { sx: -22, sy:  0,  ex: -88, ey:   0, s0: 0.75, sMid: 1.45, sEnd: 2.45, rot: -6 },
+  { sx:  22, sy:  0,  ex:  88, ey:   0, s0: 0.75, sMid: 1.45, sEnd: 2.45, rot:  6 },
+  { sx: -18, sy: -16, ex: -78, ey: -58, s0: 0.70, sMid: 1.35, sEnd: 2.30, rot:  4 },
+  { sx:  18, sy:  16, ex:  78, ey:  58, s0: 0.70, sMid: 1.35, sEnd: 2.30, rot: -4 }
+];
+
+function getRegCloudStage() {
+  if (regCloudStage) return regCloudStage;
+  const root = document.createElement('div');
+  root.className = 'reg-cloud-overlay';
+  root.setAttribute('aria-hidden', 'true');
+  const veil = document.createElement('div');
+  veil.className = 'reg-cloud-veil';
+  root.append(veil);
+
+  const banks = REG_CLOUD_DIRS.map((dir, i) => {
+    const b = document.createElement('div');
+    b.className = 'reg-cloud-bank';
+    const flip = i % 2 === 0 ? 1 : -1;
+    b.innerHTML = `<svg viewBox="0 0 420 230" style="transform:scaleX(${flip})">
+      <path class="c-shade" fill="rgba(218, 208, 192, 0.85)" d="M55 158 C28 158,14 138,26 116 C32 95,58 84,82 91 C98 62,138 48,176 62 C202 38,254 40,278 68 C314 58,356 76,366 108 C394 114,404 144,382 162 C362 178,320 182,275 178 C220 186,155 184,105 174 Z"/>
+      <path class="c-main" fill="rgba(253, 250, 244, 0.96)" d="M62 146 C34 146,20 126,32 104 C38 83,64 72,88 79 C104 50,144 36,182 50 C208 26,260 28,284 56 C320 46,362 64,372 96 C400 102,410 132,388 150 C368 166,326 170,281 166 C226 174,161 172,111 162 Z"/>
+    </svg>`;
+    root.append(b);
+    return { el: b, dir };
+  });
+
+  document.body.append(root);
+  regCloudStage = { root, veil, banks };
+  return regCloudStage;
+}
+
+function playRegionCloudDive(r, cardEl, direction = 'down') {
+  if (regDiving || matchMedia('(prefers-reduced-motion: reduce)').matches || !document.body.animate) {
+    location.hash = direction === 'down' && r ? `#regione/${r.id}` : '#regioni';
+    return;
+  }
+  regDiving = true;
+  const box = $('regions-view');
+  const { root, veil, banks } = getRegCloudStage();
+  const totalMs = 1050; // Durata cinematografica (1.05s)
+  const swapMs = 420;
+  const openMs = totalMs - swapMs;
+
+  root.classList.add('active');
+
+  // Punto di tuffo centrato sulla card della regione cliccata (o centro alto se si risale)
+  if (cardEl && direction === 'down') {
+    const rect = cardEl.getBoundingClientRect();
+    const vRect = box.getBoundingClientRect();
+    const ox = (rect.left + rect.width / 2) - vRect.left;
+    const oy = (rect.top + rect.height / 2) - vRect.top;
+    box.style.transformOrigin = `${ox}px ${oy}px`;
+  } else {
+    box.style.transformOrigin = '50% 35%';
+  }
+
+  // Fase 1: Zoom-in dentro il box cliccato (o zoom-out se si risale a "Tutte le regioni")
+  const zoomOutTarget = direction === 'down' ? 'scale(2.35)' : 'scale(0.78)';
+  box.animate([
+    { transform: 'scale(1)', opacity: 1, filter: 'blur(0px)' },
+    { transform: zoomOutTarget, opacity: 0, filter: 'blur(5px)' }
+  ], { duration: swapMs, easing: 'cubic-bezier(0.4, 0, 0.85, 0.6)', fill: 'forwards' });
+
+  // Velo nuvoloso centrale che copre lo scambio pagina e si dirada subito dopo
+  veil.animate([
+    { opacity: 0, transform: 'scale(0.85)' },
+    { opacity: 1, transform: 'scale(1.0)', offset: 0.38 },
+    { opacity: 0.92, transform: 'scale(1.08)', offset: 0.50 },
+    { opacity: 0, transform: 'scale(1.35)' }
+  ], { duration: totalMs, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+
+  // I 10 banchi di nuvole illustrate anni '70: convergono e poi si diradano aprendosi verso i bordi
+  const d = direction === 'down' ? 1 : -0.7;
+  banks.forEach(({ el, dir }) => {
+    el.animate([
+      { transform: `translate(calc(-50% + ${dir.sx}vw), calc(-50% + ${dir.sy}vh)) scale(${dir.s0}) rotate(0deg)`, opacity: 0 },
+      { transform: `translate(calc(-50% + ${dir.sx * 1.4}vw), calc(-50% + ${dir.sy * 1.4}vh)) scale(${dir.sMid}) rotate(${dir.rot * 0.5}deg)`, opacity: 1, offset: 0.38 },
+      { transform: `translate(calc(-50% + ${dir.ex * d}vw), calc(-50% + ${dir.ey * d}vh)) scale(${dir.sEnd}) rotate(${dir.rot}deg)`, opacity: 0 }
+    ], { duration: totalMs, easing: 'cubic-bezier(0.18, 0.88, 0.32, 1)', fill: 'forwards' });
+  });
+
+  // A metà (dietro le nuvole): carica la pagina della regione (o l'elenco) e falla atterrare dall'alto mentre le nuvole si aprono
+  setTimeout(() => {
+    if (direction === 'down' && r) {
+      history.pushState(null, '', `#regione/${r.id}`);
+      regionPage(r, true);
+    } else {
+      history.pushState(null, '', '#regioni');
+      regionList();
+    }
+    box.style.transformOrigin = '50% 25%';
+    const startScale = direction === 'down' ? 'scale(1.22) translateY(-18px)' : 'scale(0.88)';
+    const animIn = box.animate([
+      { transform: startScale, opacity: 0, filter: 'blur(4px)' },
+      { transform: 'scale(1) translateY(0px)', opacity: 1, filter: 'blur(0px)' }
+    ], { duration: openMs, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+    animIn.onfinish = () => {
+      box.style.transform = '';
+      box.style.opacity = '';
+      box.style.filter = '';
+    };
+  }, swapMs);
+
+  setTimeout(() => {
+    root.classList.remove('active');
+    regDiving = false;
+  }, totalMs + 30);
+}
+
 function regionList() {
   const box = $('regions-view');
   box.innerHTML = '<div class="reg-list"></div>';
@@ -115,12 +235,17 @@ function regionList() {
       <span class="reg-txt"><strong>${esc(r.name)}</strong>
       <span class="reg-starters">${r.starters.map(s => `<img src="${MON_SPRITE(s)}" alt="" width="64" height="64" loading="lazy">`).join('')}</span></span>`;
     a.querySelector('.reg-img img').onerror = e => { e.target.remove(); };
+    a.onclick = e => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      playRegionCloudDive(r, a);
+    };
     list.append(a);
   }
   scrollTo(0, 0);
 }
 
-async function regionPage(r) {
+async function regionPage(r, fromCloudDive = false) {
   const box = $('regions-view');
   box.innerHTML = '';
   box.style.setProperty('--c', r.color);
@@ -139,8 +264,13 @@ async function regionPage(r) {
     </div>
     <div class="reg-starter-row"></div>`;
   head.querySelector('.reg-lead').textContent = r.intro;
+  head.querySelector('.reg-back').onclick = e => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    playRegionCloudDive(null, null, 'up');
+  };
   box.append(head);
-  if (regMotion()) gsap.fromTo(head.querySelector('.reg-cover'), { opacity: 0, scale: 1.04 }, { opacity: 1, scale: 1, duration: .7, ease: 'power2.out' });
+  if (!fromCloudDive && regMotion()) gsap.fromTo(head.querySelector('.reg-cover'), { opacity: 0, scale: 1.04 }, { opacity: 1, scale: 1, duration: .7, ease: 'power2.out' });
   regReveal([...head.querySelectorAll('.reg-title, .reg-lead, .reg-games-line')], el => gsap.fromTo(el, { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: .6, ease: 'power3.out' }));
 
   let dex = [];
