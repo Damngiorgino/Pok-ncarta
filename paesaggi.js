@@ -1,422 +1,279 @@
-// Pokéncarta — Motore Paesaggi Pixel Art (18 tipi) + Fusione Dithering per Doppio Tipo.
-// Griglia nativa 40×30 pixel (proporzione 4:3 come 200×150) renderizzata con crispEdges:
-// zero sfocature, 100% pixel art autentica in stile Pokémon GBA / DS.
-// Nei Pokémon con due tipi (e nell'header della scheda Pokédex), il secondo tipo si fonde
-// da sinistra a destra usando una maschera di dithering a scacchiera pixelata!
-
+// Pokéncarta, versione "essenziale": un paesaggio disegnato per ogni tipo, dietro al Pokémon nelle schede del Pokédex
+// (scelto da progetto-logo/prototipo-paesaggi.html, versione A). Ogni paesaggio diventa un'immagine SVG in CSS
+// (classe .scene.sc-<tipo>): una sola copia per tipo, anche con mille schede.
 (() => {
-  const W = 40, H = 30;
+// Paesaggi disegnati in SVG (200×150): illustrazioni stilizzate ma con profondità — più piani che sbiadiscono
+// in lontananza, luce e ombre sulle forme, bagliori. Il terreno sta in basso, così il Pokémon ci "poggia" sopra.
+const st = s => s.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join('');
+const L = (id, s, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}">${st(s)}</linearGradient>`;
+const R = (id, s) => `<radialGradient id="${id}">${st(s)}</radialGradient>`;
+const defs = (...g) => `<defs>${g.join('')}</defs>`;
+const bg = id => `<rect width="200" height="150" fill="url(#${id})"/>`;
+const glow = (id, cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id})"/>`;
+// Stellina a quattro punte
+const spark = (x, y, s, c = '#fff', o = 1) => `<path d="M${x} ${y - s} Q${x + s * .18} ${y - s * .18} ${x + s} ${y} Q${x + s * .18} ${y + s * .18} ${x} ${y + s} Q${x - s * .18} ${y + s * .18} ${x - s} ${y} Q${x - s * .18} ${y - s * .18} ${x} ${y - s}Z" fill="${c}" opacity="${o}"/>`;
+// Ciuffi d'erba lungo una riga
+const tufts = (y, xs, c, h = 7) => `<g stroke="${c}" stroke-width="1.4" stroke-linecap="round" fill="none">${xs.map(x => `<path d="M${x} ${y} q-1 -${h * .6} -3 -${h}M${x} ${y} q0 -${h * .7} 1 -${h * 1.1}M${x} ${y} q1 -${h * .5} 4 -${h * .8}"/>`).join('')}</g>`;
 
-  // Helpers per disegnare in Pixel Art su griglia 40×30
-  const px = (x, y, w, h, c, o = 1) =>
-    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"${o < 1 ? ` fill-opacity="${o}"` : ''}/>`;
-
-  // Cielo a bande orizzontali + filari di dithering pixelato tra una fascia e l'altra
-  const skyBands = (colors, splits = [7, 14, 20]) => {
-    let out = '', y0 = 0;
-    const all = [...splits, H];
-    colors.forEach((c, i) => {
-      const y1 = all[i];
-      out += px(0, y0, W, y1 - y0, c);
-      if (i > 0) {
-        for (let x = 0; x < W; x += 2) {
-          out += px(x + (y0 % 2), y0, 1, 1, colors[i - 1]);
-          if (x % 4 === 0) out += px(x + 1, y0 - 1, 1, 1, c);
-        }
-      }
-      y0 = y1;
-    });
-    return out;
-  };
-
-  // Profilo a gradini (montagne, colline, onde, dune, nuvole) da un array di altezze Y
-  const horizon = (ys, c, topHighlight = null) => {
-    let out = '';
-    for (let x = 0; x < W; x++) {
-      const y = ys[x] ?? ys[ys.length - 1];
-      out += px(x, y, 1, H - y, c);
-      if (topHighlight && y < H) out += px(x, y, 1, 1, topHighlight);
-    }
-    return out;
-  };
-
-  // Albero o pino pixelato
-  const pTree = (x, y, cDark, cLight, trunk = '#5a3921') =>
-    px(x + 1, y + 4, 2, 3, trunk) +
-    px(x, y + 2, 4, 2, cDark) + px(x + 1, y, 2, 2, cDark) +
-    px(x + 1, y, 1, 1, cLight) + px(x, y + 2, 2, 1, cLight);
-
-  // Stellina / scintilla a croce in pixel art
-  const pStar = (x, y, c = '#ffffff', center = '#fff6a0') =>
-    px(x - 1, y, 3, 1, c) + px(x, y - 1, 1, 3, c) + px(x, y, 1, 1, center);
-
-  // Sole / Luna pixel art rotonda
-  const pOrb = (cx, cy, r, cMain, cEdge = null) => {
-    let out = '';
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dx = -r; dx <= r; dx++) {
-        const d2 = dx * dx + dy * dy;
-        if (d2 <= r * r + 1) {
-          const edge = cEdge && d2 >= (r - 1) * (r - 1);
-          out += px(cx + dx, cy + dy, 1, 1, edge ? cEdge : cMain);
-        }
-      }
-    }
-    return out;
-  };
-
-  // Ciuffi d'erba o pietrisco sul terreno
-  const pDots = (pts, c) => pts.map(([x, y, w = 1, h = 1]) => px(x, y, w, h, c)).join('');
-
-  // I 18 Paesaggi Pixel Art
-  const SCENES = {
-    // 1. NORMALE: Percorso 1 al tramonto dorato, colline a gradoni, staccionata in legno e fiori
-    normal:
-      skyBands(['#f6d992', '#f7e6b5', '#fff4d4'], [6, 13, 19]) +
-      pOrb(31, 7, 4, '#fffbe0', '#f9c86b') +
-      horizon([18,18,17,17,16,16,16,17,17,18,19,19,18,18,17,16,15,15,16,16,17,18,18,19,19,18,17,17,16,16,17,17,18,18,19,19,18,18,17,17], '#b7c67e', '#d6e29c') +
-      horizon([21,21,20,20,20,21,21,22,22,22,21,21,20,20,21,21,22,22,23,22,22,21,21,20,20,21,21,22,22,22,21,21,20,20,21,21,22,22,21,21], '#7ea04e', '#a1c168') +
-      px(0, 25, 40, 5, '#597d35') + px(0, 25, 40, 1, '#6c9242') +
-      // Staccionata Percorso Pokémon
-      px(3, 22, 14, 1, '#d8b078') + px(3, 24, 14, 1, '#b58952') +
-      px(4, 21, 2, 5, '#8c6239') + px(9, 21, 2, 5, '#8c6239') + px(14, 21, 2, 5, '#8c6239') +
-      pDots([[6,27,2,1],[22,26,2,1],[33,28,2,1]], '#fff6c4') +
-      pDots([[7,26],[23,27],[34,27]], '#e86a73'),
-
-    // 2. FUOCO: Monte Camino con vulcano eruttante, cielo cremisi, fiume di lava pixelato e braci
-    fire:
-      skyBands(['#6e1d2a', '#a8332a', '#de652b', '#f4a340'], [5, 10, 16]) +
-      // Nuvole di fumo vulcanico
-      pDots([[14,2,12,2],[12,4,16,2],[17,1,8,1],[6,5,5,2],[29,4,6,2]], '#4a2228') +
-      pDots([[15,3,8,1],[13,5,10,1]], '#783a36') +
-      // Montagne lontane e cono del vulcano
-      horizon([19,18,17,16,17,18,19,20,19,17,15,13,11,9,8,7,7,7,7,7,7,7,7,8,9,11,13,15,17,19,20,19,18,17,16,17,18,19,20,20], '#4f201d', '#8c3b2b') +
-      // Bocca del cratere e colata lavica a zig-zag
-      px(16, 6, 8, 2, '#ffea79') + px(15, 7, 10, 1, '#ff9d2e') +
-      px(18, 8, 4, 4, '#ffea79') + px(17, 12, 5, 4, '#ff7b24') + px(19, 16, 5, 5, '#ff4d1c') + px(17, 21, 7, 4, '#ff7b24') +
-      px(19, 8, 2, 8, '#ffffff') + px(20, 16, 2, 6, '#ffea79') +
-      // Rocce in primo piano e fiume di magma alla base
-      px(0, 24, 40, 6, '#361515') + px(0, 24, 16, 1, '#8c3b2b') + px(25, 24, 15, 1, '#8c3b2b') +
-      px(10, 26, 22, 4, '#e03c1f') + px(13, 27, 16, 2, '#ff9d2e') + px(16, 28, 10, 1, '#ffea79') +
-      pDots([[8,10],[11,6],[27,8],[31,12],[6,14],[33,6]], '#ffea79'),
-
-    // 3. ACQUA: Mare di Hoenn in pixel art, isola con palma, onde bianche spumeggianti e sabbia
-    water:
-      skyBands(['#4ea6dc', '#7bc4ec', '#b6e3f8'], [6, 12, 17]) +
-      pOrb(8, 6, 3, '#fff9c4', '#ffe07d') +
-      // Nuvoletta pixel
-      pDots([[24,4,9,2],[26,3,5,1],[22,5,13,1]], '#ffffff') +
-      pDots([[22,6,13,1]], '#cae8f8') +
-      // Isolotto con palma all'orizzonte
-      pDots([[27,14,8,3],[29,13,4,1]], '#5c9c54') + pDots([[26,16,10,1]], '#e8cf8c') +
-      px(31, 10, 1, 4, '#8c5a32') + pDots([[29,9,5,1],[28,10,2,1],[33,10,2,1]], '#3f8242') +
-      // Oceano a fasce
-      px(0, 17, 40, 9, '#1f6fa8') + px(0, 17, 40, 2, '#3890c8') + px(0, 22, 40, 4, '#165382') +
-      // Riflesso solare e creste delle onde in pixel
-      pDots([[6,18,5,1],[7,20,3,1],[5,22,6,1],[8,24,2,1]], '#fff6b3') +
-      pDots([[16,19,5,1],[28,21,6,1],[12,23,5,1],[33,18,4,1]], '#8ad4f5') +
-      // Schiuma e spiaggia
-      horizon([25,25,26,26,26,25,25,25,26,26,26,25,25,25,26,26,25,25,25,26,26,26,25,25,25,26,26,25,25,25,26,26,26,25,25,25,26,26,25,25], '#ffffff') +
-      horizon([26,26,27,27,27,26,26,26,27,27,27,26,26,26,27,27,26,26,26,27,27,27,26,26,26,27,27,26,26,26,27,27,27,26,26,26,27,27,26,26], '#f2d694', '#7ad0f0'),
-
-    // 4. ELETTRO: Centrale Elettrica / Temporale con saette pixelate, nuvole nere e prateria carica
-    electric:
-      skyBands(['#272940', '#3d3f5c', '#69625c', '#c9a842'], [6, 12, 18]) +
-      // Nuvole temporalesche in alto
-      pDots([[0,0,40,4],[2,4,14,2],[20,4,18,2],[6,6,8,1],[24,6,10,1]], '#1b1c2e') +
-      pDots([[3,5,12,1],[21,5,14,1]], '#f5d442') +
-      // Grande fulmine a gradini a sinistra e secondo fulmine a destra
-      pDots([[11,5,2,2],[10,7,2,2],[9,9,4,1],[11,10,2,2],[10,12,2,2],[8,14,4,1],[10,15,2,3],[9,18,2,3]], '#ffe838') +
-      pDots([[11,6,1,3],[11,10,1,4],[10,15,1,4]], '#ffffff') +
-      pDots([[30,6,2,2],[29,8,3,1],[30,9,2,3],[28,12,2,3]], '#ffe838') +
-      // Traliccio / antenna in lontananza
-      px(35, 13, 1, 7, '#272940') + px(33, 13, 5, 1, '#272940') + px(34, 16, 3, 1, '#272940') +
-      // Pianura dorata elettrizzata
-      horizon([20,20,19,19,20,20,21,21,20,20,19,19,20,21,21,20,20,19,19,20,20,21,21,20,20,19,20,20,21,21,20,20,19,19,20,20,21,21,20,20], '#9e8424', '#e8c84b') +
-      px(0, 24, 40, 6, '#695614') + px(6, 21, 8, 2, '#fff799') +
-      pDots([[4,16],[16,13],[25,15],[32,18]], '#fff799'),
-
-    // 5. ERBA: Bosco Smeraldo con chiome frondose a blocchi, fasci di luce e fiori di campo
-    grass:
-      skyBands(['#b8e3a8', '#d7f2c2', '#eef9d8'], [6, 13, 19]) +
-      // Alberi sullo sfondo
-      px(0, 10, 40, 12, '#5a9444') +
-      // Tronchi
-      px(4, 12, 3, 11, '#5e3c23') + px(15, 13, 2, 10, '#5e3c23') + px(26, 13, 2, 10, '#5e3c23') + px(34, 11, 3, 12, '#5e3c23') +
-      // Chiome d'albero in primo piano
-      pDots([[0,0,14,9],[2,9,10,3],[12,0,16,7],[14,7,12,2],[26,0,14,9],[28,9,10,3]], '#2f6327') +
-      pDots([[1,1,10,5],[14,1,12,4],[28,1,10,5]], '#4a8538') +
-      pDots([[2,2,6,2],[16,2,8,2],[29,2,6,2]], '#74b553') +
-      // Raggi di sole filtranti in pixel (con trasparenza)
-      px(18, 7, 3, 14, '#fff9b3', 0.35) + px(21, 9, 2, 12, '#fff9b3', 0.25) +
-      // Radura erbosa
-      horizon([21,21,20,20,21,21,22,21,21,20,20,21,21,22,22,21,21,20,20,21,21,22,21,21,20,20,21,21,22,22,21,21,20,20,21,21,22,21,21,20], '#4a8538', '#74b553') +
-      px(0, 25, 40, 5, '#346627') +
-      pDots([[5,24],[12,26],[22,24],[30,26],[36,24]], '#fff49c') +
-      pDots([[8,27],[19,26],[27,28],[33,25]], '#f582ae'),
-
-    // 6. GHIACCIO: Vetta Polare con aurora boreale pixelata, picchi innevati e lastra di ghiaccio
-    ice:
-      skyBands(['#1d3557', '#35608a', '#6ba3c7', '#b5e2fa'], [6, 12, 18]) +
-      // Aurora boreale a strisce scalate
-      pDots([[2,3,10,1],[4,2,12,1],[16,4,12,1],[18,3,12,1],[28,2,10,1]], '#72efdd') +
-      pDots([[6,4,8,1],[20,5,10,1]], '#b8f2e6') +
-      // Picchi montuosi sfaccettati (luce a sinistra, ombra a destra)
-      horizon([19,17,15,13,11,9,11,13,15,17,15,13,10,8,6,4,6,8,10,13,16,18,16,14,12,10,12,14,16,18,16,14,11,9,11,13,15,17,18,19], '#4f86b0', '#ffffff') +
-      pDots([[6,9,1,10],[7,11,1,8],[8,13,1,6],[15,4,1,16],[16,6,1,14],[17,8,1,12],[18,10,1,10],[25,10,1,10],[26,12,1,8],[33,9,1,11],[34,11,1,9]], '#2d577a') +
-      pDots([[4,11,2,2],[13,6,2,3],[14,4,2,2],[24,10,2,2],[32,9,2,2]], '#ffffff') +
-      // Lago ghiacciato e riva innevata
-      px(0, 20, 40, 6, '#90dbf4') + px(0, 20, 40, 1, '#caf0f8') +
-      pDots([[5,22,7,1],[18,23,9,1],[29,21,6,1],[11,24,5,1]], '#ffffff') +
-      px(0, 26, 40, 4, '#e8f8ff') + px(0, 26, 40, 1, '#ffffff') +
-      pDots([[4,7],[11,3],[23,8],[31,5],[37,10]], '#ffffff'),
-
-    // 7. LOTTA: Dojo di Karate di Zafferanopoli con pareti Shoji, travi in legno e tatami
-    fighting:
-      // Parete Shoji a griglia
-      px(0, 0, 40, 19, '#f2e4c9') +
-      px(0, 0, 40, 3, '#59341c') + px(0, 17, 40, 2, '#59341c') +
-      pDots([[0,7,40,1],[0,12,40,1]], '#c7b08b') +
-      pDots([[7,3,1,14],[14,3,1,14],[25,3,1,14],[32,3,1,14]], '#c7b08b') +
-      px(0, 2, 3, 16, '#6e4225') + px(37, 2, 3, 16, '#6e4225') +
-      // Pergamena appesa al centro con simbolo rosso
-      px(17, 3, 6, 12, '#7d4928') + px(18, 4, 4, 10, '#fff9eb') +
-      px(19, 6, 2, 2, '#c83e2b') + px(19, 9, 2, 3, '#2b1e16') +
-      // Pavimento Tatami / Parquet e ring d'allenamento
-      px(0, 19, 40, 11, '#b57c43') + px(0, 19, 40, 1, '#d69f63') +
-      pDots([[0,22,40,1],[0,26,40,1]], '#8f5d2c') +
-      // Cerchio del Dojo sul pavimento
-      px(8, 23, 24, 4, '#9c6631') + px(6, 24, 28, 2, '#9c6631') +
-      px(8, 22, 24, 1, '#f7e6c4') + px(8, 27, 24, 1, '#f7e6c4') + px(6, 23, 2, 4, '#f7e6c4') + px(32, 23, 2, 4, '#f7e6c4'),
-
-    // 8. VELENO: Palude Tossica di Fucsiapoli con alberi spogli, fanghiglia viola e bolle acide
-    poison:
-      skyBands(['#241433', '#3b2152', '#593275', '#784796'], [5, 11, 17]) +
-      // Nebbia tossica verdognola
-      px(0, 15, 40, 3, '#a5d66c', 0.28) + px(4, 14, 14, 1, '#c5f08d', 0.35) + px(23, 14, 13, 1, '#c5f08d', 0.35) +
-      // Alberi contorti della palude
-      pDots([[4,7,2,12],[2,9,2,1],[1,8,1,1],[6,8,2,1],[8,7,1,1],[33,6,2,13],[31,8,2,1],[35,7,2,1],[37,6,1,1]], '#1f102b') +
-      // Terreno scuro e laguna velenosa
-      horizon([19,19,18,18,19,20,20,19,19,18,19,20,20,20,19,19,18,19,20,20,20,19,19,18,19,20,20,19,19,18,18,19,20,20,19,19,18,18,19,19], '#321b47') +
-      px(0, 21, 40, 9, '#6a2c91') + px(0, 21, 40, 1, '#9c52c4') + px(0, 26, 40, 4, '#4c1c6e') +
-      // Bolle di gas acido e funghetti
-      pDots([[9,23,3,2],[22,24,4,2],[30,22,3,2],[15,27,3,2]], '#b86ee0') +
-      pDots([[10,23],[23,24],[31,22],[16,27]], '#e8ff99') +
-      pDots([[8,16],[12,13],[25,15],[29,12]], '#c5f08d'),
-
-    // 9. TERRA: Deserto percorso 111 con sole cocente, canyon a gradoni, dune, rocce e cactus
-    ground:
-      skyBands(['#f2c166', '#f7d68a', '#fcedb6'], [6, 12, 18]) +
-      pOrb(31, 6, 4, '#fffbe0', '#f5b041') +
-      // Mesas / Grand Canyon sullo sfondo
-      pDots([[1,12,8,7],[3,10,5,2],[25,11,10,8],[27,9,6,2],[14,14,6,5]], '#c98849') +
-      pDots([[1,12,8,1],[3,10,5,1],[25,11,10,1],[27,9,6,1]], '#ebae6d') +
-      // Dune sabbiose
-      horizon([19,18,18,17,17,16,16,17,17,18,18,19,19,18,18,17,16,16,15,15,16,16,17,17,18,19,19,18,18,17,17,16,17,17,18,18,19,19,18,18], '#de9e57', '#f7c988') +
-      horizon([23,23,22,22,21,21,22,22,23,23,24,23,23,22,22,21,21,22,22,23,23,24,24,23,23,22,22,21,22,22,23,23,24,23,23,22,22,23,23,24], '#ba7936', '#e3a662') +
-      px(0, 26, 40, 4, '#965d24') +
-      // Cactus pixelato (stile Cacnea/Maractus) e massi
-      px(7, 17, 2, 6, '#4d8c3a') + px(5, 19, 2, 1, '#4d8c3a') + px(5, 18, 1, 2, '#4d8c3a') + px(9, 18, 2, 1, '#4d8c3a') + px(10, 17, 1, 2, '#4d8c3a') +
-      pDots([[18,27,3,2],[33,26,4,2]], '#6e4219'),
-
-    // 10. VOLANTE: Cielo d'alta quota sopra le nuvole cumulonembi, stormo in volo e brezze
-    flying:
-      skyBands(['#3b82c4', '#63a4de', '#99c9f2', '#d5ecfc'], [6, 12, 18]) +
-      pOrb(32, 6, 3, '#fffdf0', '#fce592') +
-      // Banchi di nuvole alte e stormo a V
-      pDots([[3,4,7,1],[5,3,4,1],[20,6,6,1],[22,5,3,1]], '#ffffff') +
-      pDots([[11,8],[13,8],[12,9],[16,6],[18,6],[17,7]], '#24527a') +
-      // Soffici tappeti di nuvole a strati nella metà inferiore
-      horizon([19,18,17,17,18,19,18,17,16,16,17,18,18,17,16,15,15,16,17,18,17,16,16,17,18,19,18,17,16,16,17,18,17,16,16,17,18,19,18,18], '#d0e7f9', '#ffffff') +
-      horizon([22,21,20,20,21,22,21,20,19,19,20,21,22,21,20,19,18,19,20,21,21,20,19,20,21,22,21,20,19,19,20,21,21,20,19,20,21,22,21,21], '#eef7ff', '#ffffff') +
-      px(0, 25, 40, 5, '#ffffff') +
-      pDots([[4,26,8,1],[18,27,10,1],[31,26,6,1]], '#c2dff5'),
-
-    // 11. PSICO: Dimensione Onirica / Spazio cosmico con anelli lunari, isole fluttuanti e cristalli
-    psychic:
-      skyBands(['#421c52', '#732c7b', '#a84799', '#de78b5'], [6, 12, 18]) +
-      // Luna mistica con anello orbitale
-      pOrb(20, 7, 4, '#ffebf7', '#f7a8d8') +
-      px(13, 7, 14, 1, '#ffffff') + px(11, 8, 3, 1, '#f7a8d8') + px(26, 6, 3, 1, '#f7a8d8') +
-      // Isolotti fluttuanti a sinistra e destra
-      pDots([[3,13,8,2],[5,15,4,2],[29,11,8,2],[31,13,4,2]], '#592363') +
-      px(3, 12, 8, 1, '#ff9ce3') + px(29, 10, 8, 1, '#ff9ce3') +
-      // Colline psichiche e cristalli luminosi
-      horizon([21,21,20,20,19,19,20,20,21,21,22,21,20,20,19,19,20,20,21,21,22,21,20,20,19,19,20,20,21,21,22,21,20,20,19,19,20,21,21,22], '#94358c', '#f582d0') +
-      px(0, 25, 40, 5, '#661d63') +
-      // Cristalli magenta e stelline a 4 punte
-      pDots([[7,22,2,3],[8,20,1,2],[31,21,2,4],[32,19,1,2]], '#ffb3f0') +
-      pStar(10, 4) + pStar(33, 4) + pStar(6, 18) + pStar(27, 17),
-
-    // 12. COLEOTTERO: Sottobosco illuminato con fili d'erba giganti, fronde e lucciole dorate
-    bug:
-      skyBands(['#d4e68a', '#e4f0a8', '#f2f7c8'], [7, 14, 20]) +
-      // Fronde giganti sugli angoli superiori
-      pDots([[0,0,15,5],[0,5,11,3],[0,8,7,2],[25,0,15,5],[29,5,11,3],[33,8,7,2]], '#5e8c2a') +
-      pDots([[0,5,11,1],[29,5,11,1]], '#99c44d') +
-      // Steli d'erba alti sullo sfondo
-      pDots([[6,10,1,12],[7,8,1,2],[12,11,1,11],[11,9,1,2],[28,10,1,12],[29,8,1,2],[34,12,1,10]], '#8ab042') +
-      // Sottobosco muschioso
-      horizon([20,20,19,19,20,21,21,20,20,19,19,20,20,21,21,20,19,19,20,20,21,21,20,20,19,19,20,21,21,20,20,19,19,20,20,21,21,20,20,19], '#6e992e', '#99c44d') +
-      px(0, 24, 40, 6, '#496b1b') +
-      // Lucciole luminose con alone
-      pDots([[9,14,3,3],[20,11,3,3],[30,15,3,3]], '#fff78c') +
-      pDots([[10,15],[21,12],[31,16]], '#ffffff') +
-      pDots([[4,26,2,1],[16,27,2,1],[26,25,2,1],[35,27,2,1]], '#bad962'),
-
-    // 13. ROCCIA: Vetta Sassosa / Cava di Pietra con pareti stratificate, stalagmiti e massi
-    rock:
-      skyBands(['#d9bf8c', '#e8d3a7', '#f5e6c4'], [6, 13, 19]) +
-      // Pareti rocciose a strati laterali e picco centrale
-      pDots([[0,6,10,16],[10,10,4,12],[27,5,13,17],[23,9,4,13],[16,12,6,10]], '#8c7250') +
-      pDots([[0,6,10,1],[10,10,4,1],[27,5,13,1],[23,9,4,1],[16,12,6,1]], '#c9b089') +
-      pDots([[0,10,10,1],[0,14,14,1],[23,13,17,1],[27,9,13,1]], '#695336') +
-      // Terreno pietroso e grandi massi squadrati con luce/ombra
-      px(0, 20, 40, 10, '#735c3d') + px(0, 20, 40, 1, '#9e835e') + px(0, 25, 40, 5, '#57442b') +
-      // Masso sinistro e masso destro
-      px(3, 21, 7, 5, '#8c7250') + px(3, 21, 5, 1, '#baa077') + px(8, 22, 2, 4, '#4d3b24') +
-      px(29, 20, 8, 6, '#8c7250') + px(29, 20, 6, 1, '#baa077') + px(35, 21, 2, 5, '#4d3b24') +
-      pDots([[14,24,3,2],[22,26,2,2],[11,27,2,1]], '#4d3b24'),
-
-    // 14. SPETTRO: Torre Pokémon di Lavandonia nella nebbia, lapidi, luna livida e fuochi fatui
-    ghost:
-      skyBands(['#181026', '#291b40', '#3d295c', '#4a4766'], [6, 12, 18]) +
-      // Torre stregata in lontananza con finestre accese color ciano
-      px(28, 4, 7, 16, '#140d21') + px(27, 4, 9, 1, '#140d21') + px(29, 2, 5, 2, '#140d21') + px(31, 1, 1, 1, '#140d21') +
-      px(30, 7, 1, 2, '#7bf0de') + px(32, 7, 1, 2, '#7bf0de') + px(31, 12, 1, 2, '#7bf0de') +
-      // Banchi di nebbia spettrale
-      px(0, 15, 40, 2, '#9e8cc4', 0.3) + px(0, 23, 40, 2, '#9e8cc4', 0.35) +
-      // Collina del cimitero e lapidi in pixel
-      horizon([20,20,19,19,18,18,19,19,20,20,19,19,18,19,20,20,21,20,20,19,19,20,20,21,20,20,19,19,20,20,21,20,20,19,19,20,20,21,21,20], '#221736', '#433063') +
-      px(0, 25, 40, 5, '#160e24') +
-      // Lapidi
-      px(5, 19, 4, 5, '#3d3359') + px(6, 18, 2, 1, '#584b7a') +
-      px(14, 21, 3, 4, '#3d3359') + px(15, 20, 1, 1, '#584b7a') +
-      px(33, 20, 4, 5, '#3d3359') + px(34, 19, 2, 1, '#584b7a') +
-      // Fuochi fatui azzurro-menta (Will-O-Wisp)
-      pDots([[9,10,3,3],[20,12,3,3],[24,8,2,2]], '#64dfdf') +
-      pDots([[10,11],[21,13],[24,8]], '#e0ffff'),
-
-    // 15. DRAGO: Pilastro Celeste tra tempeste viola e oro, rovina antica e sagoma di drago
-    dragon:
-      skyBands(['#1f1442', '#3c246b', '#6e388a', '#c97b4b'], [5, 11, 17]) +
-      // Sagoma di drago alato nel cielo
-      pDots([[6,5,5,1],[4,4,3,1],[9,4,3,1],[3,3,2,1],[11,3,2,1],[8,6,2,1]], '#140c2e') +
-      // Colonna / Pilastro antico al centro
-      px(17, 4, 6, 18, '#4f4375') + px(16, 4, 8, 1, '#8c7ab8') + px(18, 2, 4, 2, '#695994') +
-      px(17, 4, 1, 18, '#8c7ab8') + px(22, 4, 1, 18, '#2d2447') +
-      pDots([[18,7,4,1],[18,11,4,1],[18,15,4,1]], '#2d2447') +
-      // Isole sospese e nuvole dorate alla base
-      pDots([[2,13,7,2],[4,15,3,1],[30,12,7,2],[32,14,3,1]], '#352659') +
-      px(2, 12, 7, 1, '#e8b26b') + px(30, 11, 7, 1, '#e8b26b') +
-      horizon([21,20,19,19,20,21,20,19,18,19,20,21,20,19,19,20,21,20,19,18,19,20,21,20,19,19,20,21,20,19,18,19,20,21,20,19,19,20,21,21], '#8c6bb5', '#f2c98a') +
-      px(0, 25, 40, 5, '#563d7a') +
-      pDots([[12,9],[26,7],[14,16],[25,15]], '#ffe399'),
-
-    // 16. BUIO: Notte di Plenilunio nel bosco tetro, grande falce/luna pallida, stelle e rami neri
-    dark:
-      skyBands(['#0f0b1c', '#1b1430', '#2c214a', '#3d2e61'], [6, 12, 18]) +
-      pOrb(30, 7, 4, '#f5ebd1', '#c7b893') +
-      // Nuvole scure davanti alla luna
-      pDots([[24,8,7,1],[28,5,6,1]], '#1b1430') +
-      // Cielo stellato
-      pDots([[4,3],[9,6],[15,2],[20,5],[12,10],[37,3]], '#ffffff') +
-      // Albero spoglio in silhouette e colline notturne
-      pDots([[6,10,2,12],[4,12,2,1],[2,10,2,1],[8,11,3,1],[11,9,2,1],[5,15,2,1]], '#090612') +
-      horizon([20,20,19,18,18,19,19,20,21,20,20,19,18,18,19,20,20,21,20,19,19,18,19,20,20,21,20,19,18,18,19,20,20,21,20,19,19,20,20,21], '#1d1530', '#4a3970') +
-      px(0, 24, 40, 6, '#100b1c') +
-      px(0, 18, 40, 2, '#7c6a9e', 0.22),
-
-    // 17. ACCIAIO: Fonderie / Officina meccanica con piastre bullonate, tubature e ingranaggi
-    steel:
-      // Parete metallica a pannelli con rivetti
-      px(0, 0, 40, 20, '#8fa3b0') +
-      pDots([[0,9,40,1],[0,19,40,1],[13,0,1,20],[27,0,1,20]], '#5c707d') +
-      pDots([[0,10,40,1],[14,0,1,20],[28,0,1,20]], '#bfd0db') +
-      // Rivetti negli angoli dei pannelli
-      pDots([[2,2],[11,2],[16,2],[25,2],[30,2],[38,2],[2,12],[11,12],[16,12],[25,12],[30,12],[38,12]], '#495a66') +
-      // Grande ingranaggio pixelato a sinistra e tubazione a destra
-      pDots([[4,5,6,6],[3,7,8,2],[6,4,2,8]], '#cad6de') + px(6, 7, 2, 2, '#5c707d') +
-      px(31, 0, 3, 19, '#5c707d') + px(32, 0, 1, 19, '#d5e2eb') +
-      // Pavimento industriale a piastre d'acciaio con riflessi diagonali
-      px(0, 20, 40, 10, '#627785') + px(0, 20, 40, 1, '#b5c7d4') + px(0, 25, 40, 5, '#495a66') +
-      pDots([[6,22,6,1],[5,23,6,1],[22,23,7,1],[21,24,7,1]], '#d5e2eb'),
-
-    // 18. FOLLETTO: Radura Incantata di Kalos con arcobaleno pastello, colline rosa, funghi e scintille
-    fairy:
-      skyBands(['#e899c5', '#f2b8d8', '#fae0ee'], [6, 12, 18]) +
-      // Arcobaleno pixelato a gradoni
-      pDots([[6,15,28,1],[9,14,22,1],[12,13,16,1]], '#ff9ebb') +
-      pDots([[6,16,28,1],[9,15,22,1],[12,14,16,1]], '#ffe699') +
-      pDots([[6,17,28,1],[9,16,22,1],[12,15,16,1]], '#a8f0c6') +
-      pDots([[6,18,28,1],[9,17,22,1],[12,16,16,1]], '#a3d5ff') +
-      // Colline zuccherose rosa
-      horizon([20,19,19,18,18,19,19,20,20,19,18,18,17,18,18,19,20,20,19,19,18,18,19,19,20,20,19,18,18,19,19,20,20,19,18,18,19,19,20,20], '#de78b0', '#ffaee0') +
-      px(0, 24, 40, 6, '#c25792') +
-      // Funghetto incantato a destra e fiori luminosi
-      px(31, 22, 2, 3, '#fff5fa') + px(29, 20, 6, 2, '#ff4d94') + px(30, 19, 4, 1, '#ff4d94') +
-      pDots([[30,20],[33,21]], '#ffffff') +
-      pDots([[5,25,2,1],[14,27,2,1],[23,25,2,1],[36,27,2,1]], '#ffe97d') +
-      pStar(8, 5) + pStar(20, 4) + pStar(32, 6),
-  };
-
-  // Genera una maschera SVG di Dithering a scacchiera pixelata (40×30) per fondere il secondo tipo!
-  // Da X=0 a X=15 è trasparente (mostra il Tipo 1), tra X=16 e X=24 i pixel si intrecciano a scacchiera
-  // stile Bayer matrix (25% -> 50% -> 75%), e da X=25 a X=40 mostra al 100% il Tipo 2!
-  let ditherRects = px(24, 0, 16, H, '#fff');
-  for (let y = 0; y < H; y++) {
-    for (let x = 15; x < 24; x++) {
-      const step = x - 15; // 0..8
-      const keep =
-        step >= 6 ? ((x + y) % 2 === 0 || x % 2 === 0) :
-        step >= 3 ? ((x + y) % 2 === 0) :
-        ((x % 2 === 0) && (y % 2 === 0));
-      if (keep) ditherRects += px(x, y, 1, 1, '#fff');
-    }
+// Ingranaggio: corona di denti e foro al centro
+const gear = (cx, cy, r, n, h, fill, hole) => {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2, w = Math.PI / n * .55;
+    for (const [ang, rr] of [[a - w, r], [a - w * .7, r + h], [a + w * .7, r + h], [a + w, r]]) pts.push(`${(cx + Math.cos(ang) * rr).toFixed(1)} ${(cy + Math.sin(ang) * rr).toFixed(1)}`);
   }
-  const ditherSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" shape-rendering="crispEdges">${ditherRects}</svg>`;
-  const ditherUrl = `url("data:image/svg+xml,${encodeURIComponent(ditherSvg)}")`;
+  return `<path d="M${pts.join('L')}Z" fill="${fill}"/><circle cx="${cx}" cy="${cy}" r="${r * .62}" fill="none" stroke="${hole}" stroke-width="1.4" opacity=".6"/><circle cx="${cx}" cy="${cy}" r="${r * .26}" fill="${hole}"/>`;
+};
 
-  // Costruisce i data URL SVG per ogni tipo e le regole CSS di fusione doppio tipo (anche nell'header Pokédex)
-  const rules = Object.entries(SCENES).map(([t, body]) => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">${body}</svg>`;
-    return `.scene.sc-${t} { --scene: url("data:image/svg+xml,${encodeURIComponent(svg)}"); }`;
-  });
+const SCENES = {
+  // Prateria all'ora d'oro: colline che sbiadiscono, boschetti, prato con ciuffi e fiorellini
+  normal: defs(L('s', [[0, '#f7e7c4'], [1, '#f3cf95']]), R('g', [[0, '#fff6d8', .95], [1, '#fff6d8', 0]]),
+      L('h', [[0, '#b3bd85'], [1, '#98a46c']]), L('m', [[0, '#93a463'], [1, '#76874a']])) + bg('s') +
+    glow('g', 150, 44, 46) + `<circle cx="150" cy="44" r="11" fill="#fde7ad"/>
+     <path d="M0 84 Q30 70 62 80 T130 74 T200 80 V150 H0Z" fill="#d8cfa3"/>
+     <g fill="#bfc08f"><circle cx="38" cy="80" r="6"/><circle cx="46" cy="79" r="7"/><circle cx="168" cy="76" r="6"/><circle cx="176" cy="78" r="5"/></g>
+     <path d="M0 98 Q50 82 104 94 T200 90 V150 H0Z" fill="url(#h)"/>
+     <path d="M0 98 Q50 82 104 94 T200 90" stroke="#cfd59f" stroke-width="1.2" fill="none" opacity=".7"/>
+     <path d="M0 116 Q70 102 130 112 T200 108 V150 H0Z" fill="url(#m)"/>
+     ${tufts(118, [14, 40, 150, 178], '#647540')}
+     <path d="M0 134 Q100 124 200 134 V150 H0Z" fill="#687a40"/>
+     <g fill="#f8ecc2"><circle cx="30" cy="130" r="1.6"/><circle cx="58" cy="137" r="1.4"/><circle cx="150" cy="132" r="1.6"/><circle cx="176" cy="140" r="1.3"/></g>`,
 
-  rules.push(`
-    .scene {
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
-    /* Fusione Pixel Art (Dithering) quando un Pokémon ha due tipi */
-    .dex-stage .scene + .scene,
-    .dex-head-scenes .scene + .scene {
-      -webkit-mask-image: ${ditherUrl} !important;
-      mask-image: ${ditherUrl} !important;
-      -webkit-mask-size: 100% 100% !important;
-      mask-size: 100% 100% !important;
-    }
-  `);
+  // Vulcano al tramonto: cielo arancio, fumo chiaro, cratere che brilla, colate con bagliore, braci
+  fire: defs(L('s', [[0, '#c4573a'], [.55, '#ef8b4f'], [1, '#f8c27a']]), R('g', [[0, '#ffe08a', .85], [1, '#ffb35c', 0]]),
+      L('v', [[0, '#a8513a'], [1, '#6b3022']], 1, 0), L('l', [[0, '#ffe39a'], [1, '#ff5a1f']])) + bg('s') +
+    `<g fill="#8a4a3c" opacity=".45"><ellipse cx="92" cy="34" rx="24" ry="9"/><ellipse cx="110" cy="24" rx="28" ry="10"/><ellipse cx="128" cy="14" rx="32" ry="9"/></g>
+     <path d="M0 96 L26 78 L48 90 L60 82 V150 H0Z M200 96 L176 76 L156 90 L142 84 V150 H200Z" fill="#c26a4c" opacity=".7"/>
+     ${glow('g', 100, 60, 46)}
+     <path d="M14 150 L76 64 Q100 54 124 64 L186 150Z" fill="url(#v)"/>
+     <path d="M76 64 L52 108 L70 104 L60 150 L14 150Z" fill="#c06a4e" opacity=".5"/>
+     <ellipse cx="100" cy="63" rx="22" ry="4.5" fill="#ffe7a0"/>
+     <path d="M95 63 Q88 86 97 104 Q90 122 98 150 L112 150 Q104 122 110 104 Q101 86 106 63Z" fill="#ff8a3d" opacity=".4"/>
+     <path d="M97 63 Q91 86 99 104 Q93 124 101 150 L108 150 Q101 123 107 104 Q99 86 104 63Z" fill="url(#l)"/>
+     <path d="M0 130 Q30 120 60 128 T130 124 T200 130 V150 H0Z" fill="#5a2a1f"/>
+     <path d="M0 130 Q30 120 60 128 T130 124 T200 130" stroke="#ffb066" stroke-width="1.2" fill="none" opacity=".7"/>
+     <g fill="#fff0b0"><circle cx="66" cy="40" r="1.4"/><circle cx="132" cy="34" r="1.2"/><circle cx="116" cy="46" r="1"/><circle cx="84" cy="28" r=".9"/><circle cx="148" cy="52" r="1"/><circle cx="56" cy="58" r=".8"/></g>`,
 
-  document.head.append(Object.assign(document.createElement('style'), { textContent: rules.join('\n') }));
+  // Mare: isola lontana, riflesso del sole, onde con luce, battigia di sabbia con schiuma
+  water: defs(L('s', [[0, '#94cdea'], [1, '#e8f6fb']]), R('g', [[0, '#fffbe6', .9], [1, '#fffbe6', 0]]),
+      L('w', [[0, '#5aaee0'], [1, '#1d5d94']]), L('b', [[0, '#f2deb0'], [1, '#e2c58c']])) + bg('s') +
+    glow('g', 52, 40, 34) + `<circle cx="52" cy="40" r="10" fill="#fff4c4"/>
+     <g fill="#fff" opacity=".7"><ellipse cx="150" cy="28" rx="20" ry="5"/><ellipse cx="166" cy="24" rx="12" ry="4"/></g>
+     <path d="M128 80 Q146 66 168 80Z" fill="#7aaec8"/><path d="M150 72 q2 -10 0 -14 M150 58 q-6 0 -10 4 M150 58 q6 -1 10 3" stroke="#6a9db8" stroke-width="1.4" fill="none"/>
+     <rect y="80" width="200" height="70" fill="url(#w)"/>
+     <g fill="#fff7d6" opacity=".7"><rect x="46" y="84" width="12" height="1.6" rx=".8"/><rect x="42" y="90" width="20" height="1.6" rx=".8"/><rect x="48" y="97" width="10" height="1.6" rx=".8"/></g>
+     <g stroke="#a9d6f0" stroke-width="1.4" fill="none" opacity=".7" stroke-linecap="round"><path d="M90 92 q6 -3 12 0"/><path d="M140 100 q8 -3 16 0"/><path d="M20 104 q6 -3 12 0"/><path d="M110 110 q7 -3 14 0"/></g>
+     <path d="M0 124 Q40 116 90 122 T200 118 V150 H0Z" fill="url(#b)"/>
+     <path d="M0 124 Q40 116 90 122 T200 118" stroke="#fff" stroke-width="2.4" fill="none" opacity=".85"/>
+     <path d="M0 128 Q40 121 90 126 T200 123" stroke="#fff" stroke-width="1" fill="none" opacity=".5"/>`,
 
-  // Aggancia automaticamente lo sfondo Pixel Art (singolo o fuso per doppio tipo) anche alla testata della scheda Pokédex
-  const attachDexHeaderScenes = () => {
-    for (const head of document.querySelectorAll('.dex-head[data-types]')) {
-      const types = head.dataset.types.split(' ').filter(Boolean);
-      const key = types.join('|');
-      let box = head.querySelector('.dex-head-scenes');
-      if (box && box.dataset.key === key) continue;
-      box?.remove();
-      box = document.createElement('div');
-      box.className = 'dex-head-scenes';
-      box.dataset.key = key;
-      box.setAttribute('aria-hidden', 'true');
-      types.forEach(t => box.append(Object.assign(document.createElement('span'), { className: `scene sc-${t}` })));
-      head.prepend(box);
-    }
-  };
+  // Temporale elettrico: cielo che vira al giallo, nuvole con il bordo acceso, fulmini ramificati con alone, pianura dorata
+  electric: defs(L('s', [[0, '#4a4a5e'], [.55, '#8f8463'], [1, '#e9cf6a']]), R('g', [[0, '#fff6b0', .75], [1, '#fff6b0', 0]]),
+      L('c', [[0, '#55566b'], [1, '#7a7466']]), L('p', [[0, '#c9a93c'], [1, '#8a7224']])) + bg('s') +
+    glow('g', 70, 70, 56) + glow('g', 150, 60, 34) +
+    `<g fill="url(#c)"><ellipse cx="40" cy="18" rx="56" ry="18"/><ellipse cx="150" cy="14" rx="66" ry="20"/><ellipse cx="100" cy="28" rx="50" ry="14"/></g>
+     <g fill="none" stroke="#fde68a" stroke-width="1.4" opacity=".8" stroke-linecap="round"><path d="M4 34 Q40 42 86 34"/><path d="M104 30 Q150 38 198 28"/></g>
+     <g stroke-linejoin="round" stroke-linecap="round" fill="none">
+       <path d="M74 30 L62 54 L72 56 L56 84 L66 86 L52 112 M62 54 L50 62 M56 84 L44 90" stroke="#fff7b8" stroke-width="8" opacity=".35"/>
+       <path d="M74 30 L62 54 L72 56 L56 84 L66 86 L52 112 M62 54 L50 62 M56 84 L44 90" stroke="#ffd21a" stroke-width="3.2"/>
+       <path d="M74 30 L62 54 L72 56 L56 84 L66 86 L52 112" stroke="#fffde8" stroke-width="1.2"/>
+       <path d="M152 26 L144 44 L152 46 L140 70 M144 44 L136 50" stroke="#fff7b8" stroke-width="6" opacity=".3"/>
+       <path d="M152 26 L144 44 L152 46 L140 70 M144 44 L136 50" stroke="#ffd21a" stroke-width="2.4"/>
+     </g>
+     <path d="M0 108 Q60 96 120 106 T200 102 V150 H0Z" fill="#b39a3a"/>
+     <path d="M0 120 Q80 110 200 120 V150 H0Z" fill="url(#p)"/>
+     <ellipse cx="56" cy="116" rx="46" ry="7" fill="#fff6b0" opacity=".35"/>
+     ${tufts(134, [16, 40, 140, 168, 190], '#6e5a1a', 9)}
+     <g fill="#fff3a0"><circle cx="30" cy="110" r="1.2"/><circle cx="96" cy="100" r="1"/><circle cx="176" cy="108" r="1.2"/></g>`,
 
-  new MutationObserver(() => requestAnimationFrame(attachDexHeaderScenes))
-    .observe(document.body, { childList: true, subtree: true });
+  // Radura nel bosco: fila di alberi lontani, chiome con luce, raggi di sole, prato e cespugli
+  grass: defs(L('s', [[0, '#e4f2d2'], [1, '#f6f9e8']]), L('t', [[0, '#a1cd80'], [1, '#6fa452']]),
+      L('m', [[0, '#6dab4a'], [1, '#467f2e']]), L('r', [[0, '#fffbe0', .55], [1, '#fffbe0', 0]])) + bg('s') +
+    `<path d="M0 86 Q12 70 24 82 Q36 66 50 80 Q64 68 78 82 Q92 70 106 82 Q120 66 136 80 Q150 70 164 82 Q178 68 200 80 V100 H0Z" fill="#bcd8a2"/>
+     <path d="M60 0 L84 0 L120 110 L90 110Z" fill="url(#r)"/><path d="M110 0 L124 0 L156 110 L136 110Z" fill="url(#r)" opacity=".7"/>
+     <g fill="#6b4a2e"><rect x="20" y="64" width="6" height="46"/><rect x="170" y="58" width="7" height="52"/></g>
+     <g fill="url(#t)"><circle cx="23" cy="56" r="20"/><circle cx="10" cy="66" r="12"/><circle cx="36" cy="66" r="12"/><circle cx="173" cy="50" r="22"/><circle cx="160" cy="62" r="13"/><circle cx="188" cy="62" r="13"/></g>
+     <g fill="#c4e3a6" opacity=".7"><circle cx="17" cy="48" r="6"/><circle cx="166" cy="42" r="7"/></g>
+     <path d="M0 108 Q50 98 100 106 T200 102 V150 H0Z" fill="url(#m)"/>
+     <g fill="#3f7a2a"><ellipse cx="40" cy="110" rx="14" ry="7"/><ellipse cx="160" cy="108" rx="16" ry="8"/></g>
+     ${tufts(128, [12, 60, 132, 186], '#3a6e26', 7)}
+     <path d="M0 136 Q100 128 200 136 V150 H0Z" fill="#3c7228"/>
+     <g fill="#fff8d0"><circle cx="28" cy="132" r="1.6"/><circle cx="90" cy="140" r="1.4"/><circle cx="170" cy="134" r="1.6"/></g>
+     <g fill="#f3a9c4"><circle cx="50" cy="138" r="1.5"/><circle cx="150" cy="142" r="1.5"/></g>`,
+
+  // Montagne innevate con aurora, facce in luce e in ombra, lago ghiacciato con riflessi, neve
+  ice: defs(L('s', [[0, '#bfe0f1'], [1, '#f2fbff']]), L('a', [[0, '#9ff0d6', 0], [.5, '#9ff0d6', .55], [1, '#9fc8f0', 0]], 1, 0),
+      L('k', [[0, '#e3f4fa'], [1, '#bfe1ef']])) + bg('s') +
+    `<path d="M0 30 Q50 14 100 28 T200 20 V36 Q150 30 100 42 T0 46Z" fill="url(#a)"/>
+     <path d="M0 92 L30 62 L50 76 L76 54 L104 84 L130 60 L160 80 L184 64 L200 74 V110 H0Z" fill="#cfe6f1"/>
+     <path d="M0 104 L40 50 L66 86 L104 34 L150 96 L176 60 L200 88 V120 H0Z" fill="#a6cfe4"/>
+     <path d="M40 50 L66 86 L58 88 L40 66Z M104 34 L150 96 L136 98 L104 52Z M176 60 L200 88 L192 90 L176 72Z" fill="#88b8d2"/>
+     <path d="M40 50 L48 61 L42 60 L37 65 L33 59Z M104 34 L116 50 L108 48 L101 54 L94 48Z M176 60 L183 69 L176 67 L171 71Z" fill="#fff"/>
+     <path d="M0 112 Q60 104 120 110 T200 108 V150 H0Z" fill="url(#k)"/>
+     <g stroke="#fff" stroke-width="1.2" opacity=".8" stroke-linecap="round"><path d="M30 120 h22M120 124 h30M70 132 h18M150 136 h24"/></g>
+     <path d="M0 136 Q30 128 60 134 T120 132 T200 136 V150 H0Z" fill="#f7fcff"/>
+     <g fill="#fff"><circle cx="20" cy="26" r="1.2"/><circle cx="70" cy="50" r="1"/><circle cx="140" cy="20" r="1.2"/><circle cx="180" cy="44" r="1"/><circle cx="110" cy="66" r=".9"/></g>`,
+
+  // Dojo: parete di carta di riso a riquadri con luce dietro, travi di legno, rotolo appeso, pavimento a doghe con cerchio d'allenamento
+  fighting: defs(L('w', [[0, '#f7e9cc'], [1, '#efd9ae']]), L('f', [[0, '#c98f55'], [1, '#9a6334']]), R('g', [[0, '#fff7e0', .8], [1, '#fff7e0', 0]])) +
+    `<rect width="200" height="150" fill="url(#w)"/>
+     ${glow('g', 60, 50, 50)}${glow('g', 150, 50, 44)}
+     <g stroke="#a06a3c" stroke-width="1.6" opacity=".75"><path d="M25 14 V92M50 14 V92M75 14 V92M125 14 V92M150 14 V92M175 14 V92M0 40 H200M0 66 H200"/></g>
+     <rect x="0" y="6" width="200" height="9" fill="#6b3f22"/><rect x="0" y="90" width="200" height="6" fill="#6b3f22"/>
+     <rect x="94" y="15" width="12" height="75" fill="#7a4828"/>
+     <rect x="86" y="22" width="28" height="44" fill="#f8f1df"/><rect x="86" y="22" width="28" height="3" fill="#5a3a22"/><rect x="86" y="63" width="28" height="3" fill="#5a3a22"/>
+     <g stroke="#2b1f18" stroke-width="2.2" stroke-linecap="round" fill="none"><path d="M96 32 h8 M100 30 v12 M95 46 q5 -3 10 0 M100 46 v10"/></g>
+     <circle cx="108" cy="58" r="2.4" fill="#c8553d"/>
+     <path d="M0 96 H200 V150 H0Z" fill="url(#f)"/>
+     <g stroke="#7e4e28" stroke-width="1" opacity=".7"><path d="M0 108 H200M0 122 H200M0 138 H200M40 96 L28 150M100 96 V150M160 96 L172 150"/></g>
+     <ellipse cx="100" cy="124" rx="70" ry="13" fill="none" stroke="#f4e3c4" stroke-width="2.4" opacity=".7"/>
+     <ellipse cx="100" cy="124" rx="66" ry="11" fill="#b17644" opacity=".35"/>`,
+
+  // Palude: alberi morti nella nebbia, acqua viola con cerchi, funghi velenosi, bolle con riflesso
+  poison: defs(L('s', [[0, '#35204a'], [1, '#7a4e93']]), L('w', [[0, '#8f5ab0'], [1, '#55316d']]),
+      R('g', [[0, '#c9f08a', .35], [1, '#c9f08a', 0]])) + bg('s') +
+    glow('g', 100, 96, 70) +
+    `<g stroke="#4a2c5e" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"><path d="M30 100 V58 M30 76 L18 64 M30 70 L40 58"/><path d="M168 100 V54 M168 72 L180 60 M168 66 L158 56"/></g>
+     <g fill="#a982c0" opacity=".28"><ellipse cx="50" cy="96" rx="70" ry="7"/><ellipse cx="160" cy="100" rx="60" ry="6"/></g>
+     <path d="M0 100 Q50 94 100 98 T200 96 V150 H0Z" fill="#4a2b5c"/>
+     <ellipse cx="100" cy="124" rx="114" ry="20" fill="url(#w)"/>
+     <g fill="none" stroke="#c49ade" stroke-width=".9" opacity=".6"><ellipse cx="60" cy="122" rx="10" ry="2.4"/><ellipse cx="140" cy="128" rx="12" ry="2.6"/></g>
+     <g fill="#c592dc"><circle cx="58" cy="116" r="4.6"/><circle cx="138" cy="120" r="3.6"/><circle cx="120" cy="110" r="2.4"/></g>
+     <g fill="#fff" opacity=".8"><circle cx="56.6" cy="114.4" r="1.2"/><circle cx="137" cy="118.8" r="1"/></g>
+     <path d="M14 138 v-8 M10 130 q4 -8 8 0Z" stroke="#e7d4ee" stroke-width="2" fill="#b35bd1"/>
+     <path d="M184 140 v-9 M179 131 q5 -9 10 0Z" stroke="#e7d4ee" stroke-width="2" fill="#b35bd1"/>
+     <g fill="#f3d7ff"><circle cx="12.5" cy="127.5" r=".9"/><circle cx="185" cy="128" r="1"/></g>`,
+
+  // Deserto: sole con calura, mesas lontane, dune con lato in luce e in ombra, increspature e sassi
+  ground: defs(L('s', [[0, '#f6dfae'], [1, '#f0c47f']]), R('g', [[0, '#fff6d6', .9], [1, '#fff6d6', 0]]),
+      L('d', [[0, '#e2b06c'], [1, '#c48a47']]), L('e', [[0, '#c9914f'], [1, '#9c6634']])) + bg('s') +
+    glow('g', 150, 38, 40) + `<circle cx="150" cy="38" r="12" fill="#fff2c8"/>
+     <path d="M0 84 V68 H20 V60 H44 V84Z M190 84 V62 H170 V70 H150 V84Z" fill="#e5bd88"/>
+     <path d="M0 96 Q40 72 92 94 T200 86 V150 H0Z" fill="url(#d)"/>
+     <path d="M0 96 Q40 72 92 94 Q50 84 0 104Z" fill="#f0c78a" opacity=".6"/>
+     <path d="M0 118 Q70 96 136 114 T200 110 V150 H0Z" fill="url(#e)"/>
+     <g stroke="#b67b3e" stroke-width="1" fill="none" opacity=".7"><path d="M20 128 q12 -4 24 0M70 124 q12 -4 24 0M130 130 q12 -4 24 0"/></g>
+     <path d="M0 138 Q100 128 200 138 V150 H0Z" fill="#956031"/>
+     <g fill="#7a4f28"><ellipse cx="34" cy="140" rx="5" ry="2.6"/><ellipse cx="168" cy="142" rx="6" ry="3"/></g>`,
+
+  // Sopra le nuvole: cielo che schiarisce verso l'orizzonte, nuvole morbide e allungate (non a bolle), uccelli
+  flying: defs(L('s', [[0, '#72b0e2'], [.65, '#cfe6f8'], [1, '#f7e6cd']]), R('g', [[0, '#fff9e8', .9], [1, '#fff9e8', 0]]),
+      L('c', [[0, '#ffffff'], [1, '#d6e5f2']])) + bg('s') +
+    glow('g', 156, 66, 42) +
+    `<g fill="#fff" opacity=".55"><path d="M10 34 Q40 26 70 32 Q50 36 10 36Z"/><path d="M130 22 Q160 16 190 22 Q164 26 130 24Z"/></g>
+     <g stroke="#4c6a88" stroke-width="1.2" fill="none" stroke-linecap="round"><path d="M40 52 q4 -4 8 0 q4 -4 8 0"/><path d="M62 44 q3 -3 6 0 q3 -3 6 0"/></g>
+     <path d="M0 100 Q30 90 60 96 Q90 86 120 96 Q150 88 200 98 V112 H0Z" fill="#e6f0f9"/>
+     <path d="M0 118 Q24 102 52 110 Q72 96 100 108 Q128 96 152 108 Q178 100 200 110 V150 H0Z" fill="url(#c)"/>
+     <path d="M0 118 Q24 102 52 110 Q72 96 100 108 Q128 96 152 108 Q178 100 200 110" stroke="#fff" stroke-width="2" fill="none"/>
+     <path d="M0 136 Q50 126 100 134 T200 132 V150 H0Z" fill="#fff"/>`,
+
+  // Crepuscolo onirico: luna con anelli, isolotti sospesi con erba rosa, cristalli e scintille
+  psychic: defs(L('s', [[0, '#c26d9c'], [.5, '#ef9fbf'], [1, '#fbd9e7']]), R('g', [[0, '#fff0f6', .85], [1, '#fff0f6', 0]]),
+      L('i', [[0, '#a85a86'], [1, '#6e3458']]), L('h', [[0, '#e18aad'], [1, '#c46a90']])) + bg('s') +
+    glow('g', 100, 42, 40) + `<circle cx="100" cy="42" r="16" fill="#fde9f1"/>
+     <ellipse cx="100" cy="42" rx="30" ry="6" fill="none" stroke="#fff" stroke-width="1" opacity=".6"/>
+     <path d="M14 60 h34 l-8 6 -6 10 -6 -6 -8 -4Z" fill="url(#i)"/><path d="M14 60 h34" stroke="#f7b9d4" stroke-width="3" stroke-linecap="round"/>
+     <path d="M150 48 h38 l-8 6 -8 12 -6 -8 -10 -4Z" fill="url(#i)"/><path d="M150 48 h38" stroke="#f7b9d4" stroke-width="3" stroke-linecap="round"/>
+     <path d="M168 48 l4 -10 4 10Z" fill="#fbe0ff"/>
+     ${spark(62, 26, 4)}${spark(148, 82, 3)}${spark(30, 92, 2.4, '#fff', .8)}${spark(176, 22, 2.4, '#fff', .8)}
+     <path d="M0 112 Q60 98 120 108 T200 104 V150 H0Z" fill="url(#h)"/>
+     <path d="M0 132 Q100 122 200 132 V150 H0Z" fill="#b25a82"/>
+     <g fill="#f6b8d2"><path d="M30 120 l3 -8 3 8Z"/><path d="M160 116 l4 -10 4 10Z"/></g>`,
+
+  // Sottobosco all'alba: erba alta in controluce, foglie grandi con nervature, rugiada e lucciole
+  bug: defs(L('s', [[0, '#eef3c8'], [1, '#e2eaa6']]), L('f', [[0, '#b5c447'], [1, '#7d952a']]), L('m', [[0, '#8ea338'], [1, '#5f7420']]),
+      R('g', [[0, '#fff9b0', .9], [1, '#fff9b0', 0]])) + bg('s') +
+    `<g stroke="#cbd68a" stroke-width="2" fill="none" stroke-linecap="round" opacity=".9"><path d="M30 100 Q28 70 36 50M44 100 Q46 76 40 60M150 100 Q154 72 146 52M164 100 Q160 78 168 62M96 100 Q94 84 100 70"/></g>
+     <path d="M-10 62 Q30 18 76 40 Q44 76 -10 62Z" fill="url(#f)"/><path d="M-6 60 Q30 44 74 40" stroke="#d6e08a" stroke-width="1.2" fill="none"/>
+     <path d="M210 52 Q168 12 124 34 Q158 70 210 52Z" fill="url(#f)"/><path d="M206 50 Q168 38 126 34" stroke="#d6e08a" stroke-width="1.2" fill="none"/>
+     <path d="M0 108 Q50 98 100 106 T200 102 V150 H0Z" fill="url(#m)"/>
+     ${tufts(140, [10, 26, 44, 152, 170, 188], '#4d5f18', 14)}
+     <path d="M0 136 Q100 128 200 136 V150 H0Z" fill="#53661c"/>
+     ${glow('g', 60, 86, 5)}${glow('g', 142, 78, 4)}${glow('g', 120, 96, 3.5)}
+     <g fill="#fff" opacity=".85"><circle cx="34" cy="46" r="1.4"/><circle cx="164" cy="38" r="1.2"/></g>`,
+
+  // Calanchi con molte rocce: mesas a strati, massi grandi e piccoli con il lato in ombra, ciottoli
+  rock: defs(L('s', [[0, '#efe2c4'], [1, '#e3cfa5']]), L('a', [[0, '#bda57b'], [1, '#97805a']]), L('g', [[0, '#9a8560'], [1, '#6e5c3e']])) + bg('s') +
+    `<path d="M70 76 V64 H96 V58 H118 V76Z" fill="#d8c7a2"/>
+     <path d="M0 100 V52 H38 V68 H60 V100Z" fill="url(#a)"/><path d="M200 100 V46 H164 V62 H144 V100Z" fill="url(#a)"/>
+     <g stroke="#8a7350" stroke-width="1" opacity=".7"><path d="M0 62 H38M0 74 H60M0 86 H60M144 70 H200M144 82 H200M164 56 H200"/></g>
+     <path d="M38 52 V68 H60 V100" stroke="#e6d2a8" stroke-width="1.2" fill="none"/>
+     <g><path d="M70 100 l8 -14 12 -2 8 16Z" fill="#a8916a"/><path d="M90 84 l8 16 h-8Z" fill="#8a7450"/>
+        <path d="M120 100 l6 -10 10 0 6 10Z" fill="#a8916a"/><path d="M136 90 l6 10 h-6Z" fill="#8a7450"/></g>
+     <path d="M0 106 Q100 96 200 106 V150 H0Z" fill="url(#g)"/>
+     <g><path d="M14 132 q2 -18 18 -20 q16 0 20 18 Z" fill="#857150"/><path d="M34 112 q16 0 18 18 h-18Z" fill="#6c5a3c"/>
+        <path d="M150 136 q4 -22 24 -24 q20 2 22 24Z" fill="#857150"/><path d="M174 112 q20 2 22 24 h-22Z" fill="#6c5a3c"/>
+        <path d="M58 140 q2 -10 10 -10 q8 0 10 10Z" fill="#7a6644"/><path d="M68 130 q8 0 10 10 h-10Z" fill="#5f4f33"/>
+        <path d="M124 142 q2 -8 8 -8 q6 0 8 8Z" fill="#7a6644"/></g>
+     <g fill="#5c4c32"><ellipse cx="96" cy="140" rx="3" ry="1.6"/><ellipse cx="110" cy="134" rx="2.4" ry="1.3"/><ellipse cx="40" cy="144" rx="3" ry="1.5"/><ellipse cx="186" cy="144" rx="2.6" ry="1.4"/></g>`,
+
+  // Luogo stregato: cielo viola e verde acqua, torre in rovina lontana, lapidi storte, fantasmini trasparenti, fuochi fatui, nebbia
+  ghost: defs(L('s', [[0, '#2a1d40'], [.6, '#4d3a6e'], [1, '#5f7f86']]), R('w', [[0, '#c8fff4', .95], [.4, '#7fe0d6', .6], [1, '#9a7bff', 0]]),
+      L('f', [[0, '#b9a6e0', 0], [.5, '#b9a6e0', .35], [1, '#b9a6e0', 0]], 1, 0), L('gh', [[0, '#f2ecff', .75], [1, '#f2ecff', 0]])) + bg('s') +
+    `<g fill="#1f1630" opacity=".85"><rect x="140" y="30" width="18" height="70"/><path d="M136 32 L149 14 L162 32Z"/><rect x="144" y="44" width="4" height="7" fill="#9be3d8"/><rect x="150" y="60" width="4" height="7" fill="#9be3d8"/></g>
+     <path d="M0 100 Q50 90 100 98 T200 94 V150 H0Z" fill="#2c2142"/>
+     <path d="M0 86 Q60 76 120 86 T200 80 V96 Q140 90 100 100 T0 100Z" fill="url(#f)"/>
+     <g fill="#3e335a"><path d="M24 120 v-14 q8 -8 16 0 v14Z"/><path d="M160 122 v-12 q7 -7 14 0 v12Z" transform="rotate(-6 167 116)"/><path d="M60 124 v-10 q6 -6 12 0 v10Z" transform="rotate(5 66 119)"/></g>
+     <g stroke="#5a4c7a" stroke-width="1.2"><path d="M32 110 v6 M29 112 h6"/></g>
+     <path d="M0 120 Q100 112 200 120 V150 H0Z" fill="#1d1629"/>
+     <g fill="url(#gh)"><path d="M40 70 q0 -14 12 -14 q12 0 12 14 v14 l-4 -4 -4 4 -4 -4 -4 4 -4 -4 -4 4Z"/><path d="M164 52 q0 -10 9 -10 q9 0 9 10 v10 l-3 -3 -3 3 -3 -3 -3 3 -3 -3 -3 3Z"/></g>
+     <g fill="#2a1d40"><circle cx="48" cy="68" r="1.6"/><circle cx="56" cy="68" r="1.6"/><circle cx="170" cy="51" r="1.2"/><circle cx="176" cy="51" r="1.2"/></g>
+     ${glow('w', 92, 64, 7)}${glow('w', 124, 80, 5.5)}${glow('w', 20, 92, 5)}${glow('w', 186, 96, 4.5)}
+     <path d="M0 132 Q60 124 120 132 T200 128 V140 Q120 134 60 142 T0 142Z" fill="url(#f)"/>`,
+
+  // Drago: cielo tempestoso porpora e oro, Pilastro antico tra le nuvole, isole sospese, sagoma di drago lontano, vortici di vento
+  dragon: defs(L('s', [[0, '#2b1d5a'], [.5, '#6a3f8f'], [1, '#e0a05a']]), R('g', [[0, '#ffd890', .8], [1, '#ffd890', 0]]),
+      L('t', [[0, '#7c6aa8'], [1, '#3e3166']], 1, 0), L('c', [[0, '#d8c4ef'], [1, '#9c86c8']])) + bg('s') +
+    glow('g', 100, 96, 60) +
+    `<path d="M126 34 q10 -6 20 -2 q-6 2 -8 6 q8 -2 14 2 q-8 0 -12 4 q-6 -2 -14 -10Z" fill="#2a1b4a"/>
+     <path d="M146 32 q8 -10 18 -10 M146 32 q4 -12 -2 -18" stroke="#2a1b4a" stroke-width="1.6" fill="none"/>
+     <path d="M84 104 V40 L92 30 L100 24 L108 30 L116 40 V104Z" fill="url(#t)"/>
+     <g fill="#2e2452" opacity=".6"><rect x="88" y="44" width="24" height="3"/><rect x="88" y="62" width="24" height="3"/><rect x="88" y="80" width="24" height="3"/><rect x="97" y="50" width="6" height="9"/></g>
+     <path d="M100 24 L108 30 L116 40 V104 H108 V40Z" fill="#2e2452" opacity=".35"/>
+     <path d="M18 70 h30 l-6 8 -8 10 -6 -8 -10 -4Z" fill="#4a3a78"/><path d="M18 70 h30" stroke="#b9a3e6" stroke-width="2"/>
+     <path d="M156 84 h32 l-7 8 -9 10 -6 -9 -10 -3Z" fill="#4a3a78"/><path d="M156 84 h32" stroke="#b9a3e6" stroke-width="2"/>
+     <g fill="none" stroke="#f3d9a0" stroke-width="1.4" opacity=".65" stroke-linecap="round"><path d="M10 50 q30 -12 54 0 q12 6 4 10"/><path d="M134 66 q26 -10 50 2"/></g>
+     <path d="M0 112 Q30 100 60 108 Q90 98 120 108 Q150 100 200 110 V150 H0Z" fill="url(#c)"/>
+     <path d="M0 132 Q50 122 100 130 T200 128 V150 H0Z" fill="#8c75bb"/>`,
+
+  // Buio: notte con luna e nuvole, nebbia, albero spoglio (senza fuochi fatui)
+  dark: defs(L('s', [[0, '#1c152b'], [1, '#43355d']]), R('g', [[0, '#f4ead0', .55], [1, '#f4ead0', 0]])) + bg('s') +
+    glow('g', 150, 36, 34) + `<circle cx="150" cy="36" r="13" fill="#efe4c6"/>
+     <g fill="#2f2542" opacity=".9"><ellipse cx="136" cy="44" rx="22" ry="4"/><ellipse cx="164" cy="34" rx="16" ry="3"/></g>
+     <path d="M0 104 Q50 92 100 100 T200 96 V150 H0Z" fill="#2c2240"/>
+     <path d="M36 118 V80 M36 96 L22 82 M36 90 L50 72 M50 72 L56 70 M22 82 L18 84 M36 104 L44 98" stroke="#150f20" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+     <g fill="#9a88b8" opacity=".25"><ellipse cx="60" cy="110" rx="70" ry="7"/><ellipse cx="160" cy="118" rx="66" ry="7"/></g>
+     <path d="M0 122 Q100 114 200 122 V150 H0Z" fill="#1d1629"/>
+     <g fill="#fff" opacity=".7"><circle cx="20" cy="22" r=".8"/><circle cx="80" cy="16" r=".9"/><circle cx="110" cy="30" r=".7"/></g>`,
+
+  // Acciaio: officina di metallo — parete a lastre rivettate, ingranaggi grandi e piccoli, tubi, pavimento a piastre con riflessi
+  steel: defs(L('w', [[0, '#9fb2bf'], [1, '#c9d5dd']]), L('m', [[0, '#d7e1e8'], [1, '#8ea3b1']], 1, 1), L('f', [[0, '#8297a6'], [1, '#5d7080']]),
+      R('g', [[0, '#ffffff', .55], [1, '#ffffff', 0]])) +
+    `<rect width="200" height="150" fill="url(#w)"/>
+     <g stroke="#879cab" stroke-width="1.2"><path d="M0 34 H200M0 68 H200M50 0 V100M100 0 V34M150 0 V100M100 68 V100"/></g>
+     <g fill="#7b909f">${[[6, 6], [44, 6], [56, 6], [94, 6], [106, 6], [144, 6], [156, 6], [194, 6], [6, 40], [44, 40], [56, 40], [144, 40], [156, 40], [194, 40], [6, 74], [44, 74], [156, 74], [194, 74]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.4"/>`).join('')}</g>
+     ${glow('g', 70, 30, 40)}
+     ${gear(34, 50, 26, 12, 6, 'url(#m)', '#6d8291')}${gear(170, 36, 20, 10, 5, 'url(#m)', '#6d8291')}${gear(146, 74, 13, 8, 4, '#b8c7d1', '#6d8291')}
+     <path d="M0 88 H60 q8 0 8 -8 V20" stroke="#6f8494" stroke-width="5" fill="none"/><path d="M0 88 H60 q8 0 8 -8 V20" stroke="#c3d0d9" stroke-width="1.4" fill="none"/>
+     <path d="M0 100 H200 V150 H0Z" fill="url(#f)"/>
+     <g stroke="#4f6070" stroke-width="1"><path d="M0 116 H200M0 134 H200M40 100 L32 150M100 100 V150M160 100 L168 150"/></g>
+     <g fill="#dfe8ee" opacity=".5"><path d="M50 104 h30 l-4 6 h-30Z"/><path d="M120 120 h34 l-4 8 h-34Z"/></g>`,
+
+  // Prato incantato: arcobaleno tenue, colline rosa, fiori a cinque petali, funghetti, scintille
+  fairy: defs(L('s', [[0, '#eeaccf'], [1, '#f9d3e6']]), L('h', [[0, '#ec9fc6'], [1, '#d97aab']]), R('g', [[0, '#fff4fa', .7], [1, '#fff4fa', 0]])) + bg('s') +
+    glow('g', 40, 30, 26) + glow('g', 160, 40, 22) +
+    `<g fill="none" stroke-width="3" opacity=".35"><path d="M20 108 A80 80 0 0 1 180 108" stroke="#ffb3c7"/><path d="M26 108 A74 74 0 0 1 174 108" stroke="#ffe0a6"/><path d="M32 108 A68 68 0 0 1 168 108" stroke="#b9e6c9"/><path d="M38 108 A62 62 0 0 1 162 108" stroke="#b9d3f6"/></g>
+     ${spark(40, 30, 4)}${spark(160, 40, 3)}${spark(130, 20, 2.4, '#fff', .8)}${spark(70, 52, 2, '#fff', .8)}
+     <path d="M0 104 Q50 88 100 100 T200 96 V150 H0Z" fill="url(#h)"/>
+     <path d="M0 126 Q100 114 200 126 V150 H0Z" fill="#cc6c9f"/>
+     <g fill="#fff"><g transform="translate(26 134)"><circle cx="0" cy="-3" r="2.2"/><circle cx="2.9" cy="-.9" r="2.2"/><circle cx="1.8" cy="2.4" r="2.2"/><circle cx="-1.8" cy="2.4" r="2.2"/><circle cx="-2.9" cy="-.9" r="2.2"/></g>
+        <g transform="translate(172 138)"><circle cx="0" cy="-3" r="2.2"/><circle cx="2.9" cy="-.9" r="2.2"/><circle cx="1.8" cy="2.4" r="2.2"/><circle cx="-1.8" cy="2.4" r="2.2"/><circle cx="-2.9" cy="-.9" r="2.2"/></g></g>
+     <g fill="#ffe27a"><circle cx="26" cy="134" r="1.6"/><circle cx="172" cy="138" r="1.6"/></g>
+     <path d="M150 128 v-6 M145 122 q5 -8 10 0Z" stroke="#fff3f8" stroke-width="2" fill="#f27fb6"/>
+     <g fill="#f9a8cf"><circle cx="60" cy="140" r="2"/><circle cx="120" cy="142" r="2"/><circle cx="92" cy="134" r="1.6"/></g>`,
+};
+// Ogni paesaggio diventa un'immagine riutilizzabile (una sola copia per tipo, anche con mille schede)
+const css = Object.entries(SCENES).map(([t, body]) =>
+  `.scene.sc-${t} { --scene: url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid slice">${body}</svg>`)}"); }`).join('\n');
+document.head.append(Object.assign(document.createElement('style'), { textContent: css }));
 })();
